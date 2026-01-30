@@ -1,0 +1,226 @@
+.projects-view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.projects-view__title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.projects-view__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.projects-view__card {
+    display: flex;
+    flex-direction: column;
+}
+
+.projects-view__client {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.projects-view__description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-md);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.projects-view__financials {
+    display: flex;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-sm) 0;
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--spacing-sm);
+}
+
+.projects-view__financial-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.projects-view__financial-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.projects-view__financial-value {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.projects-view__financial-value--positive {
+    color: var(--color-accent-green);
+}
+
+.projects-view__financial-value--negative {
+    color: var(--color-accent-red);
+}
+
+.projects-view__alerts {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.projects-view__alert {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--font-size-xs);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.projects-view__alert--issue {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--color-accent-red);
+}
+
+.projects-view__alert--risk {
+    background: rgba(234, 179, 8, 0.15);
+    color: var(--color-accent-yellow);
+}
+
+.projects-view__team,
+.projects-view__period {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+/* Project Detail */
+.project-detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.project-detail__header {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.project-detail__label {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: 4px;
+}
+
+.project-detail__value {
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+}
+
+.project-detail__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.project-detail__section--issue {
+    background: rgba(239, 68, 68, 0.1);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.project-detail__section--risk {
+    background: rgba(234, 179, 8, 0.1);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.project-detail__section-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.project-detail__chart {
+    background: var(--color-bg-glass);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+}
+
+.project-detail__team {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.project-detail__member {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-glass);
+    border-radius: var(--radius-md);
+    min-width: 200px;
+}
+
+.project-detail__member-avatar {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple));
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: var(--font-weight-semibold);
+}
+
+.project-detail__member-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.project-detail__member-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.project-detail__member-role {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.project-detail__list {
+    margin: 0;
+    padding-left: var(--spacing-lg);
+    color: var(--color-text-primary);
+}
+
+.project-detail__list li {
+    margin-bottom: var(--spacing-xs);
+}

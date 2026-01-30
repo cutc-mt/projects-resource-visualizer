@@ -1,0 +1,15 @@
+/* App-level styles - most styling is in index.css and component CSS files */
+
+/* Ensure smooth animations */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: ease;
+  transition-duration: 0ms;
+}
+
+/* Apply transitions only when not reducing motion */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    transition-duration: 150ms;
+  }
+}
