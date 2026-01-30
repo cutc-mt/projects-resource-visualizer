@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { getProbabilityLevel, ROLES } from '../data/types';
+import { getProbabilityLevel, ROLES, PRE_SALES_ROLES } from '../data/types';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Modal } from '../components/UI';
 import LeadsBubbleChart from '../components/Dashboard/LeadsBubbleChart';
-import { Calendar, DollarSign, MessageSquare, AlertTriangle, Users, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Calendar, DollarSign, MessageSquare, AlertTriangle, Users, Plus, Trash2, Edit2, Briefcase } from 'lucide-react';
 import { format, parseISO, addMonths, startOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import './LeadsView.css';
@@ -33,6 +33,7 @@ export default function LeadsView() {
         deleteAllocation
     } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    // State for prospect allocations (future project allocations)
     const [isAddingAllocation, setIsAddingAllocation] = useState(false);
     const [editingAllocationId, setEditingAllocationId] = useState(null);
     const [allocationForm, setAllocationForm] = useState({
@@ -41,36 +42,75 @@ export default function LeadsView() {
         month: '',
         percentage: 50
     });
+    // State for pre-sales staff (current pre-sales activity)
+    const [isAddingPreSales, setIsAddingPreSales] = useState(false);
+    const [editingPreSalesId, setEditingPreSalesId] = useState(null);
+    const [preSalesForm, setPreSalesForm] = useState({
+        memberId: '',
+        role: '',
+        month: '',
+        percentage: 20
+    });
 
     const selectedLead = leads.find(l => l.id === selectedProjectId);
 
-    // Get allocations for selected lead
+    // Get all allocations for selected lead
     const leadAllocations = useMemo(() => {
         if (!selectedLead) return [];
         return getAllocationsForProject(selectedLead.id);
     }, [selectedLead, getAllocationsForProject]);
 
-    // Group allocations by member for display
-    const allocationsByMember = useMemo(() => {
+    // Separate pre-sales allocations from prospect allocations
+    const preSalesAllocations = useMemo(() => {
+        return leadAllocations.filter(a => a.isPreSales);
+    }, [leadAllocations]);
+
+    const prospectAllocations = useMemo(() => {
+        return leadAllocations.filter(a => a.isProspect && !a.isPreSales);
+    }, [leadAllocations]);
+
+    // Group pre-sales allocations by member for display
+    const preSalesByMember = useMemo(() => {
         const map = new Map();
-        leadAllocations.forEach(a => {
+        preSalesAllocations.forEach(a => {
             const member = members.find(m => m.id === a.memberId);
             if (!map.has(a.memberId)) {
-                map.set(a.memberId, {
-                    member,
-                    allocations: []
-                });
+                map.set(a.memberId, { member, allocations: [] });
             }
             map.get(a.memberId).allocations.push(a);
         });
         return Array.from(map.values());
-    }, [leadAllocations, members]);
+    }, [preSalesAllocations, members]);
 
-    // Available months for allocation
+    // Group prospect allocations by member for display
+    const allocationsByMember = useMemo(() => {
+        const map = new Map();
+        prospectAllocations.forEach(a => {
+            const member = members.find(m => m.id === a.memberId);
+            if (!map.has(a.memberId)) {
+                map.set(a.memberId, { member, allocations: [] });
+            }
+            map.get(a.memberId).allocations.push(a);
+        });
+        return Array.from(map.values());
+    }, [prospectAllocations, members]);
+
+    // Available months for allocation (project period)
     const availableMonths = useMemo(() => {
         if (!selectedLead) return [];
         return generateMonthsBetween(selectedLead.startDate, selectedLead.endDate);
     }, [selectedLead]);
+
+    // Current months for pre-sales activity (next 6 months from now)
+    const currentMonths = useMemo(() => {
+        const months = [];
+        const today = startOfMonth(new Date());
+        for (let i = 0; i < 6; i++) {
+            const date = addMonths(today, i);
+            months.push(format(date, 'yyyy-MM'));
+        }
+        return months;
+    }, []);
 
     const handleSelectLead = (leadId) => {
         selectProject(leadId);
@@ -82,6 +122,8 @@ export default function LeadsView() {
         selectProject(null);
         setIsAddingAllocation(false);
         setEditingAllocationId(null);
+        setIsAddingPreSales(false);
+        setEditingPreSalesId(null);
     };
 
     const getProbabilityBadge = (probability) => {
@@ -95,6 +137,7 @@ export default function LeadsView() {
         return <Badge variant={variantMap[level.label]}>{probability}% ({level.label})</Badge>;
     };
 
+    // === Prospect Allocation Handlers (Future project allocations) ===
     const handleAddAllocation = () => {
         setIsAddingAllocation(true);
         setEditingAllocationId(null);
@@ -147,6 +190,61 @@ export default function LeadsView() {
         setIsAddingAllocation(false);
         setEditingAllocationId(null);
     };
+
+    // === Pre-Sales Staff Handlers (Current pre-sales activity) ===
+    const handleAddPreSales = () => {
+        setIsAddingPreSales(true);
+        setEditingPreSalesId(null);
+        setPreSalesForm({
+            memberId: members[0]?.id || '',
+            role: Object.values(PRE_SALES_ROLES)[0],
+            month: currentMonths[0] || '',
+            percentage: 20
+        });
+    };
+
+    const handleEditPreSales = (allocation) => {
+        setEditingPreSalesId(allocation.id);
+        setIsAddingPreSales(false);
+        setPreSalesForm({
+            memberId: allocation.memberId,
+            role: allocation.role,
+            month: allocation.month,
+            percentage: allocation.percentage
+        });
+    };
+
+    const handleSavePreSales = () => {
+        if (!preSalesForm.memberId || !preSalesForm.role || !preSalesForm.month) return;
+
+        if (editingPreSalesId) {
+            updateAllocation({
+                id: editingPreSalesId,
+                ...preSalesForm,
+                projectId: selectedLead.id,
+                isPreSales: true
+            });
+        } else {
+            addAllocation({
+                id: `presales-${Date.now()}`,
+                ...preSalesForm,
+                projectId: selectedLead.id,
+                isPreSales: true
+            });
+        }
+        setIsAddingPreSales(false);
+        setEditingPreSalesId(null);
+    };
+
+    const handleDeletePreSales = (allocationId) => {
+        deleteAllocation(allocationId);
+    };
+
+    const handleCancelPreSales = () => {
+        setIsAddingPreSales(false);
+        setEditingPreSalesId(null);
+    };
+
 
     return (
         <div className="leads-view">
@@ -253,6 +351,133 @@ export default function LeadsView() {
                                     {format(parseISO(selectedLead.endDate), 'yyyy/MM/dd', { locale: ja })}
                                 </span>
                             </div>
+                        </div>
+
+                        {/* Pre-Sales Staff Section */}
+                        <div className="lead-detail__section lead-detail__section--presales">
+                            <div className="lead-detail__section-header">
+                                <h4 className="lead-detail__section-title">
+                                    <Briefcase size={16} /> プレ担当者
+                                </h4>
+                                <button
+                                    className="lead-detail__add-btn lead-detail__add-btn--presales"
+                                    onClick={handleAddPreSales}
+                                >
+                                    <Plus size={16} /> 追加
+                                </button>
+                            </div>
+
+                            {/* Add/Edit Form for Pre-Sales */}
+                            {(isAddingPreSales || editingPreSalesId) && (
+                                <div className="allocation-form allocation-form--presales">
+                                    <div className="allocation-form__row">
+                                        <div className="allocation-form__field">
+                                            <label>メンバー</label>
+                                            <select
+                                                value={preSalesForm.memberId}
+                                                onChange={e => setPreSalesForm({ ...preSalesForm, memberId: e.target.value })}
+                                            >
+                                                {members.map(m => (
+                                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="allocation-form__field">
+                                            <label>ロール</label>
+                                            <select
+                                                value={preSalesForm.role}
+                                                onChange={e => setPreSalesForm({ ...preSalesForm, role: e.target.value })}
+                                            >
+                                                {Object.values(PRE_SALES_ROLES).map(role => (
+                                                    <option key={role} value={role}>{role}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="allocation-form__field">
+                                            <label>月</label>
+                                            <select
+                                                value={preSalesForm.month}
+                                                onChange={e => setPreSalesForm({ ...preSalesForm, month: e.target.value })}
+                                            >
+                                                {currentMonths.map(month => (
+                                                    <option key={month} value={month}>
+                                                        {format(parseISO(month + '-01'), 'yyyy年M月', { locale: ja })}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="allocation-form__field">
+                                            <label>従事率 ({preSalesForm.percentage}%)</label>
+                                            <input
+                                                type="range"
+                                                min="5"
+                                                max="50"
+                                                step="5"
+                                                value={preSalesForm.percentage}
+                                                onChange={e => setPreSalesForm({ ...preSalesForm, percentage: parseInt(e.target.value) })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="allocation-form__actions">
+                                        <button className="allocation-form__btn allocation-form__btn--save" onClick={handleSavePreSales}>
+                                            保存
+                                        </button>
+                                        <button className="allocation-form__btn allocation-form__btn--cancel" onClick={handleCancelPreSales}>
+                                            キャンセル
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Pre-Sales List */}
+                            {preSalesByMember.length > 0 ? (
+                                <div className="allocation-list allocation-list--presales">
+                                    {preSalesByMember.map(({ member, allocations }) => (
+                                        <div key={member.id} className="allocation-list__member">
+                                            <div className="allocation-list__member-header">
+                                                <div className="allocation-list__member-avatar allocation-list__member-avatar--presales">
+                                                    {member.name.charAt(0)}
+                                                </div>
+                                                <div className="allocation-list__member-info">
+                                                    <span className="allocation-list__member-name">{member.name}</span>
+                                                    <span className="allocation-list__member-role">{member.role}</span>
+                                                </div>
+                                            </div>
+                                            <div className="allocation-list__items">
+                                                {allocations.map(a => (
+                                                    <div key={a.id} className="allocation-list__item allocation-list__item--presales">
+                                                        <Badge size="sm" variant="blue">
+                                                            {format(parseISO(a.month + '-01'), 'M月', { locale: ja })}
+                                                        </Badge>
+                                                        <span className="allocation-list__item-role">{a.role}</span>
+                                                        <span className="allocation-list__item-pct">{a.percentage}%</span>
+                                                        <div className="allocation-list__item-actions">
+                                                            <button
+                                                                className="allocation-list__item-btn"
+                                                                onClick={() => handleEditPreSales(a)}
+                                                                title="編集"
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <button
+                                                                className="allocation-list__item-btn allocation-list__item-btn--delete"
+                                                                onClick={() => handleDeletePreSales(a.id)}
+                                                                title="削除"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="allocation-list__empty">
+                                    プレ担当者がありません。「追加」ボタンから登録してください。
+                                </p>
+                            )}
                         </div>
 
                         {/* Planned Allocations Section */}

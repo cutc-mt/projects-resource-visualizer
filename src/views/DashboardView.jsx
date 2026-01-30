@@ -6,7 +6,7 @@ import ResourceMatrix from '../components/Dashboard/ResourceMatrix';
 import './DashboardView.css';
 
 export default function DashboardView() {
-    const { leads, activeProjects, members, selectProject, setView } = useApp();
+    const { leads, activeProjects, members, selectProject, setView, managerMode } = useApp();
 
     // Calculate stats
     const totalLeadValue = leads.reduce((sum, l) => sum + l.estimatedBudget, 0);
@@ -65,18 +65,20 @@ export default function DashboardView() {
                 </div>
             </section>
 
-            {/* Resource Matrix */}
-            <section className="dashboard-view__section">
-                <div className="dashboard-view__section-header">
-                    <h3 className="dashboard-view__section-title">リソース稼働状況</h3>
-                    <p className="dashboard-view__section-subtitle">
-                        クリックで詳細展開（プロジェクト別稼働率）
-                    </p>
-                </div>
-                <div className="dashboard-view__matrix glass-card">
-                    <ResourceMatrix />
-                </div>
-            </section>
+            {/* Resource Matrix - Manager Only */}
+            {managerMode && (
+                <section className="dashboard-view__section">
+                    <div className="dashboard-view__section-header">
+                        <h3 className="dashboard-view__section-title">リソース稼働状況</h3>
+                        <p className="dashboard-view__section-subtitle">
+                            クリックで詳細展開（プロジェクト別稼働率）
+                        </p>
+                    </div>
+                    <div className="dashboard-view__matrix glass-card">
+                        <ResourceMatrix />
+                    </div>
+                </section>
+            )}
         </div>
     );
 }

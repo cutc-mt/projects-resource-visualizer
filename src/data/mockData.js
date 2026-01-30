@@ -260,6 +260,27 @@ export const mockAllocations = [
     { id: 'a46', memberId: 'm6', projectId: 'p1', role: ROLES.DESIGNER, month: '2026-01', percentage: 40 },
     { id: 'a47', memberId: 'm6', projectId: 'p1', role: ROLES.DESIGNER, month: '2026-02', percentage: 30 },
     { id: 'a48', memberId: 'm6', projectId: 'p1', role: ROLES.DESIGNER, month: '2026-03', percentage: 20 },
+
+    // Pre-Sales Allocations (Current pre-sales activity assignments)
+    // Lead p3 - 営業支援AIアシスタント (富士商事株式会社)
+    { id: 'ps1', memberId: 'm1', projectId: 'p3', role: '提案リーダー', month: '2026-01', percentage: 20, isPreSales: true },
+    { id: 'ps2', memberId: 'm1', projectId: 'p3', role: '提案リーダー', month: '2026-02', percentage: 15, isPreSales: true },
+    { id: 'ps3', memberId: 'm2', projectId: 'p3', role: '技術支援', month: '2026-01', percentage: 10, isPreSales: true },
+    { id: 'ps4', memberId: 'm2', projectId: 'p3', role: '技術支援', month: '2026-02', percentage: 20, isPreSales: true },
+
+    // Lead p4 - 製造ライン異常検知システム (関西精密工業株式会社)
+    { id: 'ps5', memberId: 'm5', projectId: 'p4', role: 'ヒアリング担当', month: '2026-01', percentage: 15, isPreSales: true },
+    { id: 'ps6', memberId: 'm5', projectId: 'p4', role: 'ヒアリング担当', month: '2026-02', percentage: 20, isPreSales: true },
+    { id: 'ps7', memberId: 'm2', projectId: 'p4', role: '技術支援', month: '2026-02', percentage: 10, isPreSales: true },
+
+    // Lead p6 - ヘルスケアAIプラットフォーム (国立医療センター)
+    { id: 'ps8', memberId: 'm1', projectId: 'p6', role: '営業リード', month: '2026-01', percentage: 10, isPreSales: true },
+    { id: 'ps9', memberId: 'm1', projectId: 'p6', role: '営業リード', month: '2026-02', percentage: 15, isPreSales: true },
+    { id: 'ps10', memberId: 'm4', projectId: 'p6', role: '技術支援', month: '2026-01', percentage: 10, isPreSales: true },
+    { id: 'ps11', memberId: 'm4', projectId: 'p6', role: '技術支援', month: '2026-02', percentage: 15, isPreSales: true },
+
+    // Lead p5 - 契約書レビューAI (弁護士法人ひかり)
+    { id: 'ps12', memberId: 'm5', projectId: 'p5', role: 'ヒアリング担当', month: '2026-01', percentage: 10, isPreSales: true },
 ];
 
 export default {

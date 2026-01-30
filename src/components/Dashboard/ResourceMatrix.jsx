@@ -52,7 +52,8 @@ export default function ResourceMatrix({ onSelectMember }) {
                         projectName: project?.name || 'Unknown',
                         role: a.role,
                         percentage: a.percentage,
-                        isProspect: a.isProspect
+                        isProspect: a.isProspect,
+                        isPreSales: a.isPreSales
                     };
                 });
 
@@ -148,7 +149,10 @@ export default function ResourceMatrix({ onSelectMember }) {
                                                                 <tr key={projectId} className="resource-matrix__detail-project-row">
                                                                     <td className="resource-matrix__detail-project">
                                                                         <span className="resource-matrix__detail-project-name">
-                                                                            {firstOccurrence?.isProspect && (
+                                                                            {firstOccurrence?.isPreSales && (
+                                                                                <span className="resource-matrix__presales-badge">プレ</span>
+                                                                            )}
+                                                                            {firstOccurrence?.isProspect && !firstOccurrence?.isPreSales && (
                                                                                 <span className="resource-matrix__prospect-badge">見込</span>
                                                                             )}
                                                                             {firstOccurrence?.projectName}

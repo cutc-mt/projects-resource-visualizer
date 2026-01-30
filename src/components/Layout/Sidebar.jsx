@@ -10,15 +10,18 @@ import {
 import { useApp } from '../../context/AppContext';
 import './Sidebar.css';
 
-const menuItems = [
+const allMenuItems = [
     { id: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
     { id: 'leads', label: 'プレ活動', icon: TrendingUp },
     { id: 'projects', label: '受注案件', icon: FolderKanban },
-    { id: 'resources', label: 'リソース管理', icon: Users },
+    { id: 'resources', label: 'リソース管理', icon: Users, managerOnly: true },
 ];
 
 export default function Sidebar({ isCollapsed, onToggle }) {
-    const { currentView, setView } = useApp();
+    const { currentView, setView, managerMode } = useApp();
+
+    // Filter menu items based on manager mode
+    const menuItems = allMenuItems.filter(item => !item.managerOnly || managerMode);
 
     return (
         <aside className={`sidebar ${isCollapsed ? 'sidebar--collapsed' : ''}`}>

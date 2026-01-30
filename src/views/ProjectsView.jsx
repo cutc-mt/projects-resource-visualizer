@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Modal } from '../components/UI';
+import ProjectsGantt from '../components/Dashboard/ProjectsGantt';
 import {
     Calendar,
     DollarSign,
@@ -9,7 +10,9 @@ import {
     AlertCircle,
     TrendingUp,
     TrendingDown,
-    Minus
+    Minus,
+    LayoutGrid,
+    GanttChart
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -28,6 +31,7 @@ import './ProjectsView.css';
 export default function ProjectsView() {
     const { activeProjects, getAllocationsForProject, getMemberById, selectProject, selectedProjectId } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [viewMode, setViewMode] = useState('panel'); // 'panel' or 'gantt'
 
     const selectedProject = activeProjects.find(p => p.id === selectedProjectId);
 
@@ -73,85 +77,111 @@ export default function ProjectsView() {
 
     return (
         <div className="projects-view">
-            <h2 className="projects-view__title">受注案件一覧</h2>
-
-            <div className="projects-view__grid">
-                {activeProjects.map(project => {
-                    const daysRemaining = getDaysRemaining(project.endDate);
-                    const costVariance = getCostVariance(project.plannedCost, project.actualCost);
-                    const team = getProjectTeam(project.id);
-
-                    return (
-                        <Card
-                            key={project.id}
-                            hoverable
-                            onClick={() => handleSelectProject(project.id)}
-                            className="projects-view__card"
-                        >
-                            <CardHeader>
-                                <CardTitle>{project.name}</CardTitle>
-                                <Badge variant={daysRemaining < 30 ? 'warning' : 'info'}>
-                                    残り{daysRemaining}日
-                                </Badge>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="projects-view__client">{project.clientName}</p>
-                                <p className="projects-view__description">{project.description}</p>
-
-                                {/* Financials Summary */}
-                                <div className="projects-view__financials">
-                                    <div className="projects-view__financial-item">
-                                        <span className="projects-view__financial-label">売上</span>
-                                        <span className="projects-view__financial-value">
-                                            ¥{((project.actualRevenue || project.estimatedBudget) / 10000).toLocaleString()}万
-                                        </span>
-                                    </div>
-                                    <div className="projects-view__financial-item">
-                                        <span className="projects-view__financial-label">コスト差異</span>
-                                        <span className={`projects-view__financial-value ${costVariance > 0 ? 'projects-view__financial-value--negative' :
-                                            costVariance < 0 ? 'projects-view__financial-value--positive' : ''
-                                            }`}>
-                                            {costVariance > 0 ? <TrendingUp size={14} /> :
-                                                costVariance < 0 ? <TrendingDown size={14} /> :
-                                                    <Minus size={14} />}
-                                            {Math.abs(costVariance)}%
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Issues/Risks indicators */}
-                                {(project.issues.length > 0 || project.risks.length > 0) && (
-                                    <div className="projects-view__alerts">
-                                        {project.issues.length > 0 && (
-                                            <span className="projects-view__alert projects-view__alert--issue">
-                                                <AlertCircle size={14} /> {project.issues.length}件の課題
-                                            </span>
-                                        )}
-                                        {project.risks.length > 0 && (
-                                            <span className="projects-view__alert projects-view__alert--risk">
-                                                <AlertTriangle size={14} /> {project.risks.length}件のリスク
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-                            </CardContent>
-                            <CardFooter>
-                                <div className="projects-view__team">
-                                    <Users size={14} />
-                                    <span>{team.length}名参画</span>
-                                </div>
-                                <div className="projects-view__period">
-                                    <Calendar size={14} />
-                                    <span>
-                                        {format(parseISO(project.startDate), 'M/d', { locale: ja })} -
-                                        {format(parseISO(project.endDate), 'M/d', { locale: ja })}
-                                    </span>
-                                </div>
-                            </CardFooter>
-                        </Card>
-                    );
-                })}
+            <div className="projects-view__header">
+                <h2 className="projects-view__title">受注案件一覧</h2>
+                <div className="projects-view__view-toggle">
+                    <button
+                        className={`projects-view__toggle-btn ${viewMode === 'panel' ? 'projects-view__toggle-btn--active' : ''}`}
+                        onClick={() => setViewMode('panel')}
+                        title="パネル表示"
+                    >
+                        <LayoutGrid size={18} />
+                        パネル
+                    </button>
+                    <button
+                        className={`projects-view__toggle-btn ${viewMode === 'gantt' ? 'projects-view__toggle-btn--active' : ''}`}
+                        onClick={() => setViewMode('gantt')}
+                        title="ガントチャート表示"
+                    >
+                        <GanttChart size={18} />
+                        タイムライン
+                    </button>
+                </div>
             </div>
+
+            {viewMode === 'panel' ? (
+                <div className="projects-view__grid">
+                    {activeProjects.map(project => {
+                        const daysRemaining = getDaysRemaining(project.endDate);
+                        const costVariance = getCostVariance(project.plannedCost, project.actualCost);
+                        const team = getProjectTeam(project.id);
+
+                        return (
+                            <Card
+                                key={project.id}
+                                hoverable
+                                onClick={() => handleSelectProject(project.id)}
+                                className="projects-view__card"
+                            >
+                                <CardHeader>
+                                    <CardTitle>{project.name}</CardTitle>
+                                    <Badge variant={daysRemaining < 30 ? 'warning' : 'info'}>
+                                        残り{daysRemaining}日
+                                    </Badge>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="projects-view__client">{project.clientName}</p>
+                                    <p className="projects-view__description">{project.description}</p>
+
+                                    {/* Financials Summary */}
+                                    <div className="projects-view__financials">
+                                        <div className="projects-view__financial-item">
+                                            <span className="projects-view__financial-label">売上</span>
+                                            <span className="projects-view__financial-value">
+                                                ¥{((project.actualRevenue || project.estimatedBudget) / 10000).toLocaleString()}万
+                                            </span>
+                                        </div>
+                                        <div className="projects-view__financial-item">
+                                            <span className="projects-view__financial-label">コスト差異</span>
+                                            <span className={`projects-view__financial-value ${costVariance > 0 ? 'projects-view__financial-value--negative' :
+                                                costVariance < 0 ? 'projects-view__financial-value--positive' : ''
+                                                }`}>
+                                                {costVariance > 0 ? <TrendingUp size={14} /> :
+                                                    costVariance < 0 ? <TrendingDown size={14} /> :
+                                                        <Minus size={14} />}
+                                                {Math.abs(costVariance)}%
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Issues/Risks indicators */}
+                                    {(project.issues.length > 0 || project.risks.length > 0) && (
+                                        <div className="projects-view__alerts">
+                                            {project.issues.length > 0 && (
+                                                <span className="projects-view__alert projects-view__alert--issue">
+                                                    <AlertCircle size={14} /> {project.issues.length}件の課題
+                                                </span>
+                                            )}
+                                            {project.risks.length > 0 && (
+                                                <span className="projects-view__alert projects-view__alert--risk">
+                                                    <AlertTriangle size={14} /> {project.risks.length}件のリスク
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <div className="projects-view__team">
+                                        <Users size={14} />
+                                        <span>{team.length}名参画</span>
+                                    </div>
+                                    <div className="projects-view__period">
+                                        <Calendar size={14} />
+                                        <span>
+                                            {format(parseISO(project.startDate), 'M/d', { locale: ja })} -
+                                            {format(parseISO(project.endDate), 'M/d', { locale: ja })}
+                                        </span>
+                                    </div>
+                                </CardFooter>
+                            </Card>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="projects-view__gantt glass-card">
+                    <ProjectsGantt onSelectProject={handleSelectProject} />
+                </div>
+            )}
 
             {/* Project Detail Modal */}
             <Modal

@@ -34,6 +34,15 @@ export const ROLES = {
   CONSULTANT: 'コンサルタント'
 };
 
+// Pre-Sales Roles (for pre-sales activities)
+export const PRE_SALES_ROLES = {
+  SALES_LEAD: '営業リード',
+  PROPOSAL_LEAD: '提案リーダー',
+  TECH_SUPPORT: '技術支援',
+  DEMO_SUPPORT: 'デモ担当',
+  ANALYST: 'ヒアリング担当'
+};
+
 /**
  * @typedef {Object} ConversationLog
  * @property {string} id
@@ -79,5 +88,7 @@ export const ROLES = {
  * @property {string} role - Role in this specific project
  * @property {string} month - YYYY-MM format
  * @property {number} percentage - 0-100+ (can be over-allocated)
- * @property {boolean} [isProspect] - True if this is a future/tentative allocation
+ * @property {boolean} [isProspect] - True if this is a future/tentative allocation for when lead converts
+ * @property {boolean} [isPreSales] - True if this is for pre-sales activity itself (proposal, demo, etc.)
  */
+

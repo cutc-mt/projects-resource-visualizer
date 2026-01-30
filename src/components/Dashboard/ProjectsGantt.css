@@ -1,0 +1,241 @@
+.projects-gantt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.projects-gantt__container {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-bg-secondary);
+}
+
+/* Header */
+.projects-gantt__header {
+    display: flex;
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.projects-gantt__label-col {
+    width: 250px;
+    min-width: 250px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    background: var(--color-bg-secondary);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+}
+
+.projects-gantt__timeline-header {
+    flex: 1;
+    display: flex;
+}
+
+.projects-gantt__month {
+    padding: var(--spacing-sm) var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    text-align: center;
+    border-right: 1px solid var(--color-border);
+}
+
+.projects-gantt__month:last-child {
+    border-right: none;
+}
+
+/* Body */
+.projects-gantt__body {
+    display: flex;
+    flex-direction: column;
+}
+
+.projects-gantt__row {
+    display: flex;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.projects-gantt__row:last-child {
+    border-bottom: none;
+}
+
+.projects-gantt__row:hover {
+    background: var(--color-bg-glass);
+}
+
+.projects-gantt__project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.projects-gantt__project-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.projects-gantt__project-name--lead {
+    color: var(--color-text-secondary);
+}
+
+.projects-gantt__lead-badge {
+    font-size: var(--font-size-xs);
+    padding: 1px 6px;
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--color-accent-purple);
+    border-radius: var(--radius-sm);
+}
+
+.projects-gantt__project-client {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.projects-gantt__timeline-col {
+    flex: 1;
+    position: relative;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+}
+
+/* Grid lines */
+.projects-gantt__grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.projects-gantt__grid-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--color-border);
+}
+
+/* Today marker */
+.projects-gantt__today-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--color-accent-red);
+    z-index: 5;
+}
+
+.projects-gantt__today-marker::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--color-accent-red);
+    border-radius: var(--radius-full);
+}
+
+/* Project bars */
+.projects-gantt__bar {
+    position: absolute;
+    height: 28px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 var(--spacing-sm);
+    overflow: hidden;
+    transition: all var(--transition-fast);
+    z-index: 2;
+}
+
+.projects-gantt__bar:hover {
+    transform: scaleY(1.1);
+    z-index: 10;
+}
+
+.projects-gantt__bar--active {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.5));
+    border: 1px solid var(--color-accent-blue);
+}
+
+.projects-gantt__bar--lead {
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.3));
+    border: 1px dashed var(--color-accent-purple);
+}
+
+.projects-gantt__bar-progress {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, var(--color-accent-blue), var(--color-accent-cyan));
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    opacity: 0.8;
+}
+
+.projects-gantt__bar-label {
+    position: relative;
+    z-index: 1;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Legend */
+.projects-gantt__legend {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-glass);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.projects-gantt__legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.projects-gantt__legend-bar {
+    width: 32px;
+    height: 12px;
+    border-radius: var(--radius-sm);
+}
+
+.projects-gantt__legend-bar--active {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.5), rgba(6, 182, 212, 0.5));
+    border: 1px solid var(--color-accent-blue);
+}
+
+.projects-gantt__legend-bar--lead {
+    background: rgba(139, 92, 246, 0.3);
+    border: 1px dashed var(--color-accent-purple);
+}
+
+.projects-gantt__legend-today {
+    width: 12px;
+    height: 12px;
+    background: var(--color-accent-red);
+    border-radius: var(--radius-full);
+}

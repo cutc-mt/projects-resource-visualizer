@@ -191,6 +191,15 @@
     border-radius: var(--radius-sm);
 }
 
+.resource-matrix__presales-badge {
+    font-size: var(--font-size-xs);
+    padding: 1px 6px;
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--color-accent-blue);
+    border-radius: var(--radius-sm);
+}
+
+
 .resource-matrix__detail-role {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);

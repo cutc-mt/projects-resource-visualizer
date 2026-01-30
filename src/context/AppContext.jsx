@@ -64,7 +64,7 @@ function appReducer(state, action) {
 const AppContext = createContext(null);
 
 // Provider Component
-export function AppProvider({ children }) {
+export function AppProvider({ children, managerMode = false }) {
     const [state, dispatch] = useReducer(appReducer, initialState);
 
     // Derived data using useMemo for performance
@@ -130,6 +130,7 @@ export function AppProvider({ children }) {
         ...state,
         ...derivedData,
         ...actions,
+        managerMode,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
