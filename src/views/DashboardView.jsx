@@ -3,14 +3,26 @@ import { useApp } from '../context/AppContext';
 import { StatCard } from '../components/UI';
 import LeadsBubbleChart from '../components/Dashboard/LeadsBubbleChart';
 import ResourceMatrix from '../components/Dashboard/ResourceMatrix';
+import SalesChart from '../components/Dashboard/SalesChart';
 import './DashboardView.css';
 
 export default function DashboardView() {
-    const { leads, activeProjects, members, selectProject, setView, managerMode } = useApp();
+    const { leads, activeProjects, members, selectProject, setView, managerMode, probabilityWeights } = useApp();
 
     // Calculate stats
     const totalLeadValue = leads.reduce((sum, l) => sum + l.estimatedBudget, 0);
-    const weightedPipeline = leads.reduce((sum, l) => sum + (l.estimatedBudget * l.probability / 100), 0);
+
+    // Calculate weighted pipeline using current probability weights
+    const weightedPipeline = leads.reduce((sum, l) => {
+        const probability = l.probability || 0;
+        let weight = 0.1;
+        if (probability >= 80) weight = probabilityWeights.HIGH;
+        else if (probability >= 50) weight = probabilityWeights.MEDIUM;
+        else if (probability >= 25) weight = probabilityWeights.LOW;
+        else weight = probabilityWeights.UNCERTAIN;
+        return sum + (l.estimatedBudget * weight);
+    }, 0);
+
     const activeRevenue = activeProjects.reduce((sum, p) => sum + (p.actualRevenue || p.estimatedBudget), 0);
 
     const handleSelectLead = (leadId) => {
@@ -52,6 +64,19 @@ export default function DashboardView() {
                 />
             </div>
 
+            {/* Sales Chart */}
+            <section className="dashboard-view__section">
+                <div className="dashboard-view__section-header">
+                    <h3 className="dashboard-view__section-title">売上・受注予測</h3>
+                    <p className="dashboard-view__section-subtitle">
+                        確定額と見込み額（確度加重）の推移
+                    </p>
+                </div>
+                <div className="dashboard-view__chart glass-card">
+                    <SalesChart />
+                </div>
+            </section>
+
             {/* Leads Bubble Chart */}
             <section className="dashboard-view__section">
                 <div className="dashboard-view__section-header">
@@ -82,3 +107,4 @@ export default function DashboardView() {
         </div>
     );
 }
+

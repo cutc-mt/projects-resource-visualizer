@@ -12,6 +12,7 @@
     width: 100%;
     border-collapse: collapse;
     min-width: 800px;
+    table-layout: fixed;
 }
 
 .resource-matrix__header {
@@ -23,6 +24,7 @@
     background: var(--color-bg-secondary);
     border-bottom: 1px solid var(--color-border);
     white-space: nowrap;
+    width: 70px;
 }
 
 .resource-matrix__header--name {
@@ -142,37 +144,24 @@
     }
 }
 
-/* Detail row */
-.resource-matrix__detail-row {
-    background: var(--color-bg-secondary);
-}
-
-.resource-matrix__detail {
-    padding: var(--spacing-sm) var(--spacing-md);
-    padding-left: calc(200px + var(--spacing-md));
-}
-
-.resource-matrix__detail-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
+/* Detail project row - now part of main table */
 .resource-matrix__detail-project-row {
-    border-bottom: 1px solid var(--color-border);
+    background: rgba(59, 130, 246, 0.03);
 }
 
-.resource-matrix__detail-project-row:last-child {
-    border-bottom: none;
+.resource-matrix__detail-project-row:hover {
+    background: rgba(59, 130, 246, 0.08);
 }
 
 .resource-matrix__detail-project {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    min-width: 200px;
-    display: flex;
-    flex-direction: column;
-    background: var(--color-bg-secondary);
+    padding: var(--spacing-xs) var(--spacing-md);
+    padding-left: calc(var(--spacing-md) + 24px);
+    background: rgba(59, 130, 246, 0.03);
     position: sticky;
     left: 0;
+    z-index: 5;
+    border-bottom: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-accent-blue);
 }
 
 .resource-matrix__detail-project-name {
@@ -208,7 +197,8 @@
 .resource-matrix__detail-cell {
     padding: var(--spacing-xs) var(--spacing-sm);
     text-align: center;
-    min-width: 60px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
 }
 
 .resource-matrix__detail-cell--current {
@@ -257,4 +247,156 @@
     width: 24px;
     height: 16px;
     border-radius: var(--radius-sm);
+}
+
+/* Allocation Form */
+.resource-matrix__allocation-form {
+    background: var(--color-bg-glass);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--color-border);
+}
+
+.resource-matrix__form-row {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.resource-matrix__form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    min-width: 140px;
+    flex: 1;
+}
+
+.resource-matrix__form-field label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.resource-matrix__form-field select,
+.resource-matrix__form-field input[type="range"] {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.resource-matrix__form-field select:focus {
+    outline: none;
+    border-color: var(--color-accent-blue);
+}
+
+.resource-matrix__form-field input[type="range"] {
+    padding: 0;
+    height: 32px;
+    cursor: pointer;
+}
+
+.resource-matrix__form-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+}
+
+.resource-matrix__form-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+}
+
+.resource-matrix__form-btn--save {
+    background: var(--color-accent-green);
+    color: white;
+}
+
+.resource-matrix__form-btn--save:hover {
+    background: #1ea54d;
+}
+
+.resource-matrix__form-btn--cancel {
+    background: var(--color-bg-glass);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.resource-matrix__form-btn--cancel:hover {
+    background: var(--color-border);
+}
+
+/* Add Allocation Button */
+.resource-matrix__add-allocation-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple));
+    color: white;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+}
+
+.resource-matrix__add-allocation-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow-blue);
+}
+
+/* Detail value wrapper for edit/delete buttons */
+.resource-matrix__detail-value-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+.resource-matrix__detail-actions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.resource-matrix__detail-project-row:hover .resource-matrix__detail-actions,
+.resource-matrix__detail-cell:hover .resource-matrix__detail-actions {
+    opacity: 1;
+}
+
+.resource-matrix__detail-btn {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    transition: all var(--transition-fast);
+}
+
+.resource-matrix__detail-btn:hover {
+    background: var(--color-bg-glass);
+    color: var(--color-text-primary);
+}
+
+.resource-matrix__detail-btn--delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--color-accent-red);
+}
+
+/* Pre-sales value styling */
+.resource-matrix__detail-value--presales {
+    color: var(--color-accent-blue);
+    font-style: italic;
 }

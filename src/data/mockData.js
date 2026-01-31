@@ -63,6 +63,7 @@ export const mockProjects = [
     // Active Projects
     {
         id: 'p1',
+        projectCode: 'AI-2025-001',
         name: '社内ナレッジ検索AI構築',
         clientName: '大和物産株式会社',
         status: PROJECT_STATUS.ACTIVE,
@@ -84,6 +85,7 @@ export const mockProjects = [
     },
     {
         id: 'p2',
+        projectCode: 'AI-2025-002',
         name: 'カスタマーサポートBot開発',
         clientName: '東京テレコム株式会社',
         status: PROJECT_STATUS.ACTIVE,
@@ -106,6 +108,7 @@ export const mockProjects = [
     // Leads (Pre-sales)
     {
         id: 'p3',
+        projectCode: 'AI-2026-001',
         name: '営業支援AIアシスタント',
         clientName: '富士商事株式会社',
         status: PROJECT_STATUS.LEAD,
@@ -124,6 +127,7 @@ export const mockProjects = [
     },
     {
         id: 'p4',
+        projectCode: 'AI-2026-002',
         name: '製造ライン異常検知システム',
         clientName: '関西精密工業株式会社',
         status: PROJECT_STATUS.LEAD,
@@ -141,6 +145,7 @@ export const mockProjects = [
     },
     {
         id: 'p5',
+        projectCode: 'AI-2026-003',
         name: '契約書レビューAI',
         clientName: '弁護士法人ひかり',
         status: PROJECT_STATUS.LEAD,
@@ -158,6 +163,7 @@ export const mockProjects = [
     },
     {
         id: 'p6',
+        projectCode: 'AI-2026-004',
         name: 'ヘルスケアAIプラットフォーム',
         clientName: '国立医療センター',
         status: PROJECT_STATUS.LEAD,
@@ -176,6 +182,7 @@ export const mockProjects = [
     },
     {
         id: 'p7',
+        projectCode: 'AI-2026-005',
         name: '教育コンテンツ自動生成',
         clientName: '株式会社エデュテック',
         status: PROJECT_STATUS.LEAD,

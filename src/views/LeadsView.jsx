@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { getProbabilityLevel, ROLES, PRE_SALES_ROLES } from '../data/types';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Modal } from '../components/UI';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Modal, ProjectForm } from '../components/UI';
 import LeadsBubbleChart from '../components/Dashboard/LeadsBubbleChart';
-import { Calendar, DollarSign, MessageSquare, AlertTriangle, Users, Plus, Trash2, Edit2, Briefcase } from 'lucide-react';
+import { Calendar, DollarSign, MessageSquare, AlertTriangle, Users, Plus, Trash2, Edit2, Briefcase, ArrowRightCircle } from 'lucide-react';
 import { format, parseISO, addMonths, startOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import './LeadsView.css';
@@ -30,9 +30,20 @@ export default function LeadsView() {
         getAllocationsForProject,
         addAllocation,
         updateAllocation,
-        deleteAllocation
+        deleteAllocation,
+        addProject,
+        updateProject,
+        deleteProject,
+        convertLeadToProject,
+        managerMode
     } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // State for lead CRUD
+    const [isAddingLead, setIsAddingLead] = useState(false);
+    const [isEditingLead, setIsEditingLead] = useState(false);
+    const [isConvertingLead, setIsConvertingLead] = useState(false);
+
     // State for prospect allocations (future project allocations)
     const [isAddingAllocation, setIsAddingAllocation] = useState(false);
     const [editingAllocationId, setEditingAllocationId] = useState(null);
@@ -124,6 +135,8 @@ export default function LeadsView() {
         setEditingAllocationId(null);
         setIsAddingPreSales(false);
         setEditingPreSalesId(null);
+        setIsEditingLead(false);
+        setIsConvertingLead(false);
     };
 
     const getProbabilityBadge = (probability) => {
@@ -135,6 +148,62 @@ export default function LeadsView() {
             '不確定': 'danger'
         };
         return <Badge variant={variantMap[level.label]}>{probability}% ({level.label})</Badge>;
+    };
+
+    // === Lead CRUD Handlers ===
+    const handleAddLead = () => {
+        setIsAddingLead(true);
+    };
+
+    const handleEditLead = () => {
+        setIsEditingLead(true);
+    };
+
+    const handleDeleteLead = () => {
+        if (selectedLead && window.confirm(`「${selectedLead.name}」を削除してもよろしいですか？\n関連するアロケーションもすべて削除されます。`)) {
+            deleteProject(selectedLead.id);
+            closeModal();
+        }
+    };
+
+    const handleConvertToProject = () => {
+        setIsConvertingLead(true);
+    };
+
+    const handleLeadFormSubmit = (formData) => {
+        if (isConvertingLead && selectedLead) {
+            // Convert lead to active project
+            convertLeadToProject(selectedLead.id, {
+                ...formData,
+                actualRevenue: formData.actualRevenue || formData.estimatedBudget,
+            });
+            closeModal();
+            setIsConvertingLead(false);
+        } else if (isEditingLead && selectedLead) {
+            // Update existing lead
+            updateProject({
+                ...selectedLead,
+                ...formData,
+                id: selectedLead.id,
+            });
+            setIsEditingLead(false);
+        } else {
+            // Add new lead
+            const newLead = {
+                ...formData,
+                id: `lead-${Date.now()}`,
+                status: 'lead',
+                logs: [],
+            };
+            addProject(newLead);
+            setIsAddingLead(false);
+        }
+    };
+
+    const handleLeadFormCancel = () => {
+        setIsAddingLead(false);
+        setIsEditingLead(false);
+        setIsConvertingLead(false);
     };
 
     // === Prospect Allocation Handlers (Future project allocations) ===
@@ -258,7 +327,15 @@ export default function LeadsView() {
 
             {/* Leads List */}
             <section className="leads-view__section">
-                <h3 className="leads-view__section-title">プレ活動一覧</h3>
+                <div className="leads-view__section-header">
+                    <h3 className="leads-view__section-title">プレ活動一覧</h3>
+                    {managerMode && (
+                        <button className="leads-view__add-btn" onClick={handleAddLead}>
+                            <Plus size={18} />
+                            新規登録
+                        </button>
+                    )}
+                </div>
                 <div className="leads-view__grid">
                     {leads.map(lead => {
                         const probabilityLevel = getProbabilityLevel(lead.probability);
@@ -277,7 +354,12 @@ export default function LeadsView() {
                                     style={{ background: probabilityLevel.color }}
                                 />
                                 <CardHeader>
-                                    <CardTitle>{lead.name}</CardTitle>
+                                    <div>
+                                        {lead.projectCode && (
+                                            <span className="leads-view__project-code">{lead.projectCode}</span>
+                                        )}
+                                        <CardTitle>{lead.name}</CardTitle>
+                                    </div>
                                     {getProbabilityBadge(lead.probability)}
                                 </CardHeader>
                                 <CardContent>
@@ -308,6 +390,20 @@ export default function LeadsView() {
                 </div>
             </section>
 
+            {/* Add Lead Modal */}
+            <Modal
+                isOpen={isAddingLead}
+                onClose={() => setIsAddingLead(false)}
+                title="新規プレ活動登録"
+                size="lg"
+            >
+                <ProjectForm
+                    mode="lead"
+                    onSubmit={handleLeadFormSubmit}
+                    onCancel={handleLeadFormCancel}
+                />
+            </Modal>
+
             {/* Lead Detail Modal */}
             <Modal
                 isOpen={isModalOpen}
@@ -315,9 +411,22 @@ export default function LeadsView() {
                 title={selectedLead?.name || ''}
                 size="xl"
             >
-                {selectedLead && (
+                {selectedLead && (isEditingLead || isConvertingLead) ? (
+                    <ProjectForm
+                        initialData={selectedLead}
+                        mode={isConvertingLead ? 'convert' : 'lead'}
+                        onSubmit={handleLeadFormSubmit}
+                        onCancel={handleLeadFormCancel}
+                    />
+                ) : selectedLead && (
                     <div className="lead-detail">
                         <div className="lead-detail__header">
+                            {selectedLead.projectCode && (
+                                <div className="lead-detail__project-code">
+                                    <span className="lead-detail__label">案件ID</span>
+                                    <span className="lead-detail__value">{selectedLead.projectCode}</span>
+                                </div>
+                            )}
                             <div className="lead-detail__client">
                                 <span className="lead-detail__label">顧客名</span>
                                 <span className="lead-detail__value">{selectedLead.clientName}</span>
@@ -326,6 +435,24 @@ export default function LeadsView() {
                                 {getProbabilityBadge(selectedLead.probability)}
                             </div>
                         </div>
+
+                        {/* Manager Actions */}
+                        {managerMode && (
+                            <div className="lead-detail__actions">
+                                <button className="lead-detail__action-btn lead-detail__action-btn--convert" onClick={handleConvertToProject}>
+                                    <ArrowRightCircle size={16} />
+                                    受注に変換
+                                </button>
+                                <button className="lead-detail__action-btn lead-detail__action-btn--edit" onClick={handleEditLead}>
+                                    <Edit2 size={16} />
+                                    編集
+                                </button>
+                                <button className="lead-detail__action-btn lead-detail__action-btn--delete" onClick={handleDeleteLead}>
+                                    <Trash2 size={16} />
+                                    削除
+                                </button>
+                            </div>
+                        )}
 
                         <div className="lead-detail__section">
                             <h4 className="lead-detail__section-title">課題・ニーズ</h4>
@@ -353,18 +480,49 @@ export default function LeadsView() {
                             </div>
                         </div>
 
+                        {selectedLead.risks.length > 0 && (
+                            <div className="lead-detail__section lead-detail__section--warning">
+                                <h4 className="lead-detail__section-title">
+                                    <AlertTriangle size={16} /> リスク
+                                </h4>
+                                <ul className="lead-detail__list">
+                                    {selectedLead.risks.map((risk, i) => (
+                                        <li key={i}>{risk}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        <div className="lead-detail__section">
+                            <h4 className="lead-detail__section-title">
+                                <MessageSquare size={16} /> 会話ログ
+                            </h4>
+                            <div className="lead-detail__logs">
+                                {selectedLead.logs.map(log => (
+                                    <div key={log.id} className="lead-detail__log">
+                                        <span className="lead-detail__log-date">
+                                            {format(parseISO(log.date), 'yyyy/MM/dd', { locale: ja })}
+                                        </span>
+                                        <span className="lead-detail__log-summary">{log.summary}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Pre-Sales Staff Section */}
                         <div className="lead-detail__section lead-detail__section--presales">
                             <div className="lead-detail__section-header">
                                 <h4 className="lead-detail__section-title">
                                     <Briefcase size={16} /> プレ担当者
                                 </h4>
-                                <button
-                                    className="lead-detail__add-btn lead-detail__add-btn--presales"
-                                    onClick={handleAddPreSales}
-                                >
-                                    <Plus size={16} /> 追加
-                                </button>
+                                {managerMode && (
+                                    <button
+                                        className="lead-detail__add-btn lead-detail__add-btn--presales"
+                                        onClick={handleAddPreSales}
+                                    >
+                                        <Plus size={16} /> 追加
+                                    </button>
+                                )}
                             </div>
 
                             {/* Add/Edit Form for Pre-Sales */}
@@ -451,22 +609,24 @@ export default function LeadsView() {
                                                         </Badge>
                                                         <span className="allocation-list__item-role">{a.role}</span>
                                                         <span className="allocation-list__item-pct">{a.percentage}%</span>
-                                                        <div className="allocation-list__item-actions">
-                                                            <button
-                                                                className="allocation-list__item-btn"
-                                                                onClick={() => handleEditPreSales(a)}
-                                                                title="編集"
-                                                            >
-                                                                <Edit2 size={14} />
-                                                            </button>
-                                                            <button
-                                                                className="allocation-list__item-btn allocation-list__item-btn--delete"
-                                                                onClick={() => handleDeletePreSales(a.id)}
-                                                                title="削除"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
+                                                        {managerMode && (
+                                                            <div className="allocation-list__item-actions">
+                                                                <button
+                                                                    className="allocation-list__item-btn"
+                                                                    onClick={() => handleEditPreSales(a)}
+                                                                    title="編集"
+                                                                >
+                                                                    <Edit2 size={14} />
+                                                                </button>
+                                                                <button
+                                                                    className="allocation-list__item-btn allocation-list__item-btn--delete"
+                                                                    onClick={() => handleDeletePreSales(a.id)}
+                                                                    title="削除"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -486,12 +646,14 @@ export default function LeadsView() {
                                 <h4 className="lead-detail__section-title">
                                     <Users size={16} /> アサイン予定
                                 </h4>
-                                <button
-                                    className="lead-detail__add-btn"
-                                    onClick={handleAddAllocation}
-                                >
-                                    <Plus size={16} /> 追加
-                                </button>
+                                {managerMode && (
+                                    <button
+                                        className="lead-detail__add-btn"
+                                        onClick={handleAddAllocation}
+                                    >
+                                        <Plus size={16} /> 追加
+                                    </button>
+                                )}
                             </div>
 
                             {/* Add/Edit Form */}
@@ -578,22 +740,24 @@ export default function LeadsView() {
                                                         </Badge>
                                                         <span className="allocation-list__item-role">{a.role}</span>
                                                         <span className="allocation-list__item-pct">{a.percentage}%</span>
-                                                        <div className="allocation-list__item-actions">
-                                                            <button
-                                                                className="allocation-list__item-btn"
-                                                                onClick={() => handleEditAllocation(a)}
-                                                                title="編集"
-                                                            >
-                                                                <Edit2 size={14} />
-                                                            </button>
-                                                            <button
-                                                                className="allocation-list__item-btn allocation-list__item-btn--delete"
-                                                                onClick={() => handleDeleteAllocation(a.id)}
-                                                                title="削除"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
+                                                        {managerMode && (
+                                                            <div className="allocation-list__item-actions">
+                                                                <button
+                                                                    className="allocation-list__item-btn"
+                                                                    onClick={() => handleEditAllocation(a)}
+                                                                    title="編集"
+                                                                >
+                                                                    <Edit2 size={14} />
+                                                                </button>
+                                                                <button
+                                                                    className="allocation-list__item-btn allocation-list__item-btn--delete"
+                                                                    onClick={() => handleDeleteAllocation(a.id)}
+                                                                    title="削除"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -605,35 +769,6 @@ export default function LeadsView() {
                                     アサイン予定がありません。「追加」ボタンから登録してください。
                                 </p>
                             )}
-                        </div>
-
-                        {selectedLead.risks.length > 0 && (
-                            <div className="lead-detail__section lead-detail__section--warning">
-                                <h4 className="lead-detail__section-title">
-                                    <AlertTriangle size={16} /> リスク
-                                </h4>
-                                <ul className="lead-detail__list">
-                                    {selectedLead.risks.map((risk, i) => (
-                                        <li key={i}>{risk}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-
-                        <div className="lead-detail__section">
-                            <h4 className="lead-detail__section-title">
-                                <MessageSquare size={16} /> 会話ログ
-                            </h4>
-                            <div className="lead-detail__logs">
-                                {selectedLead.logs.map(log => (
-                                    <div key={log.id} className="lead-detail__log">
-                                        <span className="lead-detail__log-date">
-                                            {format(parseISO(log.date), 'yyyy/MM/dd', { locale: ja })}
-                                        </span>
-                                        <span className="lead-detail__log-summary">{log.summary}</span>
-                                    </div>
-                                ))}
-                            </div>
                         </div>
                     </div>
                 )}

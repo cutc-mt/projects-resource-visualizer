@@ -54,6 +54,7 @@ export const PRE_SALES_ROLES = {
 /**
  * @typedef {Object} Project
  * @property {string} id
+ * @property {string} [projectCode] - Department-managed project ID (e.g., PRJ-2025-001)
  * @property {string} name
  * @property {string} clientName
  * @property {string} status - One of PROJECT_STATUS

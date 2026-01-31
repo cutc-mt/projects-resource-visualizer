@@ -3,7 +3,7 @@ import ResourceMatrix from '../components/Dashboard/ResourceMatrix';
 import './ResourcesView.css';
 
 export default function ResourcesView() {
-    const { members } = useApp();
+    const { members, managerMode } = useApp();
 
     return (
         <div className="resources-view">
@@ -11,6 +11,7 @@ export default function ResourcesView() {
                 <h2 className="resources-view__title">リソース管理</h2>
                 <p className="resources-view__subtitle">
                     チームメンバーの月別稼働状況。行をクリックするとプロジェクト別の内訳を表示します。
+                    {managerMode && ' 管理者モードではアサインの追加・編集・削除が可能です。'}
                 </p>
             </div>
 
@@ -22,8 +23,9 @@ export default function ResourcesView() {
             </div>
 
             <div className="resources-view__matrix glass-card">
-                <ResourceMatrix />
+                <ResourceMatrix managerMode={managerMode} />
             </div>
         </div>
     );
 }
+

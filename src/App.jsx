@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
-import { DashboardView, LeadsView, ProjectsView, ResourcesView, LoginView } from './views';
+import { DashboardView, LeadsView, ProjectsView, ResourcesView, LoginView, SettingsView, HistoryView } from './views';
 import './App.css';
 
 // Protected route component for manager-only access
@@ -38,6 +38,10 @@ function AppContent() {
         return <ProjectsView />;
       case 'resources':
         return <ResourcesView />;
+      case 'settings':
+        return <SettingsView />;
+      case 'history':
+        return <HistoryView />;
       default:
         return <DashboardView />;
     }

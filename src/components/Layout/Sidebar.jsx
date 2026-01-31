@@ -4,6 +4,7 @@ import {
     FolderKanban,
     TrendingUp,
     Settings,
+    History,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
@@ -15,6 +16,7 @@ const allMenuItems = [
     { id: 'leads', label: 'プレ活動', icon: TrendingUp },
     { id: 'projects', label: '受注案件', icon: FolderKanban },
     { id: 'resources', label: 'リソース管理', icon: Users, managerOnly: true },
+    { id: 'history', label: '更新履歴', icon: History, managerOnly: true },
 ];
 
 export default function Sidebar({ isCollapsed, onToggle }) {
@@ -56,10 +58,17 @@ export default function Sidebar({ isCollapsed, onToggle }) {
             </nav>
 
             <div className="sidebar__footer">
-                <button className="sidebar__item" title="設定">
-                    <Settings size={22} className="sidebar__icon" />
-                    {!isCollapsed && <span className="sidebar__label">設定</span>}
-                </button>
+                {managerMode && (
+                    <button
+                        className={`sidebar__item ${currentView === 'settings' ? 'sidebar__item--active' : ''}`}
+                        title="設定"
+                        onClick={() => setView('settings')}
+                    >
+                        <Settings size={22} className="sidebar__icon" />
+                        {!isCollapsed && <span className="sidebar__label">設定</span>}
+                        {currentView === 'settings' && <div className="sidebar__indicator" />}
+                    </button>
+                )}
             </div>
         </aside>
     );
