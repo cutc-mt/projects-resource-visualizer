@@ -1,16 +1,70 @@
-# React + Vite
+# Projects & Resource Visualizer (PRV)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+プロジェクトとリソース（人員）の状況を可視化し、最適な管理を支援するダッシュボードアプリケーションです。
+React + Vite で構築されており、モダンなUIとインタラクティブな操作性を提供します。
 
-Currently, two official plugins are available:
+## 機能概要
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. ダッシュボード (Dashboard)
+- **バブルチャート (Leads Bubble Chart):** 案件の「確度」「予算」「時期」を視覚的に把握できます。
+- **KPI表示:** 売上予測、稼働率、リソース不足などの重要指標を一目で確認。
 
-## React Compiler
+### 2. プロジェクト管理
+- **案件一覧:** リード（プレ活動）と受注案件を分けて管理。
+- **ドラッグ＆ドロップ:** ステータス変更やメンバーアサインが可能（予定）。
+- **AIアドバイス:** 各案件のリスクや課題に対して、AIがアドバイスを提供します。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 3. リソース管理 (Resource Management)
+- **リソースヒートマップ:** メンバーごとの稼働状況を色分けして表示。過負荷や空き状況を即座に特定できます。
+- **アサイン管理:** プロジェクトやリードへのメンバー割り当てを管理。
 
-## Expanding the ESLint configuration
+### 4. 高度なログと監査 (Advanced Audit Logging)
+- **更新履歴:** プロジェクトの変更、メンバーの移動などの全操作を記録。
+- **詳細差分:** 「何が」「どう変わったか」を詳細に追跡可能。
+- **AIサマリ生成 (Beta):** 指定期間の動き（新規案件、人の出入り、進捗）をAIが自動で要約・レポート化します。
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 技術スタック
+
+- **Frontend:** React 19, Vite
+- **Routing:** React Router v7
+- **Charts:** Recharts
+- **Icons:** Lucide React
+- **Date Handling:** date-fns
+- **Styling:** Custom CSS Variables, Glassmorphism Design
+- **AI Integration:** OpenAI / Azure OpenAI / Vertex AI (Gemini) settings
+
+## セットアップ手順
+
+### 必要要件
+- Node.js (v18以上推奨)
+- npm
+
+### インストール
+
+```bash
+# リポジトリのクローン
+git clone <repository-url>
+cd projects-resource-visualizer
+
+# 依存関係のインストール
+npm install
+```
+
+### 開発サーバーの起動
+
+```bash
+npm run dev
+```
+ブラウザで `http://localhost:5173` にアクセスしてください。
+
+## AI機能の設定
+
+設定画面（Settings）から、利用するLLMプロバイダーの設定を行ってください。
+
+- **OpenAI:** API Key
+- **Azure OpenAI:** API Key, Endpoint, Deployment Name
+- **Vertex AI:** Service Account JSON (Google Cloud)
+
+## ログ機能について
+本アプリケーションは、ローカルストレージを使用して監査ログを永続化しています。
+将来的なバックエンド移行（PocketBase等）を見据えたデータ構造で設計されています。
