@@ -298,6 +298,74 @@ async function callVertexAI(prompt, settings) {
 }
 
 /**
+ * Generate a prompt for history summary
+ */
+function generateHistorySummaryPrompt(logs) {
+    if (!logs || logs.length === 0) {
+        return "履歴データがありません。";
+    }
+
+    // Limit to recent 50 logs to avoid token limits
+    const recentLogs = logs.slice(0, 50);
+
+    const logsText = recentLogs.map(log => {
+        const date = log.timestamp ? log.timestamp.split('T')[0] : 'Unknown Date';
+        let actionStr = log.action;
+        if (log.action === 'create') actionStr = '新規作成';
+        if (log.action === 'update') actionStr = '更新';
+        if (log.action === 'delete') actionStr = '削除';
+        if (log.action === 'convert') actionStr = '受注変換';
+
+        let changesStr = '';
+        if (log.changes && log.changes.length > 0) {
+            changesStr = '変更点: ' + log.changes.map(c => `${c.field} (${c.old || 'なし'} -> ${c.new || 'なし'})`).join(', ');
+        }
+
+        return `- ${date} [${log.collection || '不明'}] ${log.target_name || log.projectName || '名称不明'} : ${actionStr} ${changesStr}`;
+    }).join('\n');
+
+    return `あなたはプロジェクト管理ツールのAIアシスタントです。
+以下の更新履歴ログ（直近50件まで）をもとに、この期間のチームやプロジェクトの動きについて、マネージャー向けの簡潔な週報/月報スタイルのサマリを作成してください。
+
+## 履歴ログ
+${logsText}
+
+## サマリ作成のポイント
+- **新規案件の動き**: 新しく始まった案件や、引き合い（リード）があれば言及してください。
+- **チームの変動**: メンバーの加入や離脱、アサインの変更など、人の動きに注目してください。
+- **プロジェクトの進捗**: ステータスの変更（特に受注変換）や、重要な予算・スケジュールの変更があれば触れてください。
+- 全体的な傾向や、マネージャーが注意すべき点があれば一言添えてください。
+- 箇条書きを使い、読みやすくまとめてください。
+- 「ログによると」や「履歴データでは」といった前置きは不要です。`;
+}
+
+/**
+ * Get History Summary
+ */
+export async function getHistorySummary(logs, settings) {
+    if (settings.provider === LLM_PROVIDERS.VERTEX) {
+        if (!settings.vertexServiceAccountJson) {
+            throw new Error('サービスアカウントJSONが設定されていません。');
+        }
+    } else if (!settings?.apiKey) {
+        throw new Error('APIキーが設定されていません。');
+    }
+
+    const prompt = generateHistorySummaryPrompt(logs);
+
+    switch (settings.provider) {
+        case LLM_PROVIDERS.OPENAI:
+            return callOpenAI(prompt, settings);
+        case LLM_PROVIDERS.AZURE:
+            return callAzureOpenAI(prompt, settings);
+        case LLM_PROVIDERS.VERTEX:
+            return callVertexAI(prompt, settings);
+        default:
+            throw new Error(`Unknown provider: ${settings.provider}`);
+    }
+}
+
+/**
  * Get AI advice for a project
  * @param {Object} project - Project data
  * @param {Object} settings - LLM settings

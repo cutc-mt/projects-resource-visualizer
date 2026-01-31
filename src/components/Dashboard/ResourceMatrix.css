@@ -268,7 +268,8 @@
 .resource-matrix__form-field {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: 8px;
+    /* Increased from 4px/xs */
     min-width: 140px;
     flex: 1;
 }
@@ -278,16 +279,20 @@
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    font-weight: 500;
 }
 
 .resource-matrix__form-field select,
 .resource-matrix__form-field input[type="range"] {
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: 8px 12px;
+    /* Increased padding */
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     color: var(--color-text-primary);
     font-size: var(--font-size-sm);
+    height: 38px;
+    /* Fixed height for consistency */
 }
 
 .resource-matrix__form-field select:focus {
@@ -308,7 +313,8 @@
 }
 
 .resource-matrix__form-btn {
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: 8px 16px;
+    /* Increased padding */
     border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
@@ -339,7 +345,8 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: 8px 16px;
+    /* Increased padding */
     margin-top: var(--spacing-sm);
     background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple));
     color: white;
@@ -399,4 +406,33 @@
 .resource-matrix__detail-value--presales {
     color: var(--color-accent-blue);
     font-style: italic;
+}
+
+/* Member Form (Modal) */
+.resource-matrix__member-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.resource-matrix__member-form .resource-matrix__form-field input[type="text"],
+.resource-matrix__member-form .resource-matrix__form-field select {
+    padding: 12px 16px;
+    height: auto;
+    font-size: 1rem;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.resource-matrix__member-form .resource-matrix__form-field label {
+    font-size: 0.875rem;
+}
+
+.resource-matrix__member-form .resource-matrix__form-actions {
+    margin-top: var(--spacing-lg);
+}
+
+.resource-matrix__member-form .resource-matrix__form-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
 }

@@ -1,51 +1,51 @@
 .project-form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-md);
+    gap: var(--spacing-lg);
 }
 
 .project-form__title {
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--color-text);
-    margin: 0 0 var(--space-sm);
+    margin: 0 0 var(--spacing-sm);
 }
 
 .project-form__notice {
     background: linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(79, 70, 229, 0.1));
     border: 1px solid var(--color-accent-purple);
     border-radius: var(--radius-md);
-    padding: var(--space-md);
-    margin-bottom: var(--space-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
 }
 
 .project-form__notice p {
-    margin: 0 0 var(--space-xs);
+    margin: 0 0 var(--spacing-xs);
     font-weight: 500;
     color: var(--color-text);
 }
 
 .project-form__notice ul {
     margin: 0;
-    padding-left: var(--space-md);
+    padding-left: var(--spacing-md);
     color: var(--color-text-muted);
     font-size: 0.875rem;
 }
 
 .project-form__notice li {
-    margin: var(--space-xs) 0;
+    margin: var(--spacing-xs) 0;
 }
 
 .project-form__grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-md);
+    gap: var(--spacing-md);
 }
 
 .project-form__field {
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
+    gap: var(--spacing-sm);
 }
 
 .project-form__field--full {
@@ -62,13 +62,14 @@
 .project-form__field input[type="number"],
 .project-form__field input[type="date"],
 .project-form__field textarea {
-    padding: var(--space-sm) var(--space-md);
+    padding: 12px 16px;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     color: var(--color-text);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 1.5;
 }
 
 .project-form__field input:focus,
@@ -86,7 +87,7 @@
 
 .project-form__field textarea {
     resize: vertical;
-    min-height: 60px;
+    min-height: 80px;
 }
 
 .project-form__field input[type="range"] {
@@ -104,17 +105,18 @@
 /* List input for risks/issues */
 .project-form__list-input {
     display: flex;
-    gap: var(--space-sm);
+    gap: var(--spacing-sm);
 }
 
 .project-form__list-input input {
     flex: 1;
-    padding: var(--space-sm) var(--space-md);
+    padding: 12px 16px;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     color: var(--color-text);
-    font-size: 0.875rem;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
 .project-form__list-input input:focus {
@@ -123,7 +125,7 @@
 }
 
 .project-form__list-input button {
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     background: var(--color-bg-tertiary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -140,17 +142,17 @@
 .project-form__list {
     list-style: none;
     padding: 0;
-    margin: var(--space-sm) 0 0;
+    margin: var(--spacing-sm) 0 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
+    gap: var(--spacing-xs);
 }
 
 .project-form__list li {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-xs) var(--space-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
     background: var(--color-bg-tertiary);
     border-radius: var(--radius-sm);
     font-size: 0.875rem;
@@ -163,7 +165,7 @@
     color: var(--color-text-muted);
     font-size: 1rem;
     cursor: pointer;
-    padding: 0 var(--space-xs);
+    padding: 0 var(--spacing-xs);
     transition: color 0.2s;
 }
 
@@ -175,16 +177,16 @@
 .project-form__actions {
     display: flex;
     justify-content: flex-end;
-    gap: var(--space-sm);
-    margin-top: var(--space-md);
-    padding-top: var(--space-md);
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
     border-top: 1px solid var(--color-border);
 }
 
 .project-form__btn {
-    padding: var(--space-sm) var(--space-lg);
+    padding: 12px 24px;
     border-radius: var(--radius-md);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;

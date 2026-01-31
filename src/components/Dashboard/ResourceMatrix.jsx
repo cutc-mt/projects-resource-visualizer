@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ROLES, PRE_SALES_ROLES } from '../../data/types';
 import { format, addMonths, parseISO, startOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronDown, ChevronRight, Plus, Edit2, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Edit2, Trash2, UserPlus } from 'lucide-react';
+import { Modal } from '../UI';
 import './ResourceMatrix.css';
 
 // Generate an array of months from today
@@ -39,11 +40,17 @@ export default function ResourceMatrix({ managerMode }) {
         getProjectById,
         addAllocation,
         updateAllocation,
-        deleteAllocation
+        deleteAllocation,
+        addMember,
+        updateMember,
+        deleteMember
     } = useApp();
+
     const [expandedMemberId, setExpandedMemberId] = useState(null);
     const [isAddingAllocation, setIsAddingAllocation] = useState(false);
     const [editingAllocationId, setEditingAllocationId] = useState(null);
+
+    // Allocation Form State
     const [allocationForm, setAllocationForm] = useState({
         projectId: '',
         role: '',
@@ -51,6 +58,15 @@ export default function ResourceMatrix({ managerMode }) {
         percentage: 50,
         isProspect: false,
         isPreSales: false
+    });
+
+    // Member Form State & Modal
+    const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+    const [editingMemberId, setEditingMemberId] = useState(null);
+    const [memberForm, setMemberForm] = useState({
+        name: '',
+        role: Object.values(ROLES)[0],
+        skills: ''
     });
 
     const months = useMemo(() => generateMonthRange(2, 6), []);
@@ -107,7 +123,62 @@ export default function ResourceMatrix({ managerMode }) {
         setEditingAllocationId(null);
     };
 
-    // Allocation handlers
+    // --- Member Management Handlers ---
+
+    const openAddMemberModal = () => {
+        setEditingMemberId(null);
+        setMemberForm({
+            name: '',
+            role: Object.values(ROLES)[0],
+            skills: ''
+        });
+        setIsMemberModalOpen(true);
+    };
+
+    const openEditMemberModal = (member) => {
+        setEditingMemberId(member.id);
+        setMemberForm({
+            name: member.name,
+            role: member.role,
+            skills: member.skills ? member.skills.join(', ') : ''
+        });
+        setIsMemberModalOpen(true);
+    };
+
+    const handleSaveMember = () => {
+        if (!memberForm.name || !memberForm.role) return;
+
+        const skillsArray = memberForm.skills.split(',').map(s => s.trim()).filter(s => s);
+
+        const memberData = {
+            name: memberForm.name,
+            role: memberForm.role,
+            skills: skillsArray,
+            avatar: null // Default null for now
+        };
+
+        if (editingMemberId) {
+            updateMember({
+                id: editingMemberId,
+                ...memberData
+            });
+        } else {
+            addMember({
+                id: `m-${Date.now()}`,
+                ...memberData
+            });
+        }
+        setIsMemberModalOpen(false);
+    };
+
+    const handleDeleteMember = (memberId, memberName) => {
+        if (window.confirm(`${memberName}さんを削除してもよろしいですか？\n※関連するアサインも全て削除されます。`)) {
+            deleteMember(memberId);
+        }
+    };
+
+    // --- Allocation Handlers ---
+
     const handleAddAllocation = (memberId) => {
         setIsAddingAllocation(true);
         setEditingAllocationId(null);
@@ -224,6 +295,17 @@ export default function ResourceMatrix({ managerMode }) {
 
     return (
         <div className="resource-matrix">
+            {managerMode && (
+                <div className="resource-matrix__actions" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                        className="resource-matrix__add-allocation-btn"
+                        onClick={openAddMemberModal}
+                    >
+                        <UserPlus size={16} /> メンバー追加
+                    </button>
+                </div>
+            )}
+
             <div className="resource-matrix__container">
                 <table className="resource-matrix__table">
                     <thead>
@@ -257,8 +339,31 @@ export default function ResourceMatrix({ managerMode }) {
                                                 <ChevronRight size={16} />
                                             }
                                         </button>
-                                        <div className="resource-matrix__member-info">
-                                            <span className="resource-matrix__member-name">{member.name}</span>
+                                        <div className="resource-matrix__member-info" style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span className="resource-matrix__member-name">{member.name}</span>
+                                                {managerMode && (
+                                                    <div className="resource-matrix__member-actions"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        style={{ display: 'flex', gap: '4px', opacity: 0.7 }}
+                                                    >
+                                                        <button
+                                                            onClick={() => openEditMemberModal(member)}
+                                                            className="resource-matrix__detail-btn"
+                                                            title="メンバー編集"
+                                                        >
+                                                            <Edit2 size={12} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteMember(member.id, member.name)}
+                                                            className="resource-matrix__detail-btn resource-matrix__detail-btn--delete"
+                                                            title="メンバー削除"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                             <span className="resource-matrix__member-role">{member.role}</span>
                                         </div>
                                     </td>
@@ -481,6 +586,60 @@ export default function ResourceMatrix({ managerMode }) {
                     100%超
                 </div>
             </div>
+
+            {/* Member Add/Edit Modal */}
+            <Modal
+                isOpen={isMemberModalOpen}
+                onClose={() => setIsMemberModalOpen(false)}
+                title={editingMemberId ? 'メンバー編集' : '新規メンバー登録'}
+                size="sm"
+            >
+                <div className="resource-matrix__member-form">
+                    <div className="resource-matrix__form-field">
+                        <label>氏名</label>
+                        <input
+                            type="text"
+                            value={memberForm.name}
+                            onChange={e => setMemberForm({ ...memberForm, name: e.target.value })}
+                            placeholder="氏名を入力"
+                        />
+                    </div>
+                    <div className="resource-matrix__form-field">
+                        <label>ロール</label>
+                        <select
+                            value={memberForm.role}
+                            onChange={e => setMemberForm({ ...memberForm, role: e.target.value })}
+                        >
+                            {Object.values(ROLES).map(role => (
+                                <option key={role} value={role}>{role}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="resource-matrix__form-field">
+                        <label>スキル (カンマ区切り)</label>
+                        <input
+                            type="text"
+                            value={memberForm.skills}
+                            onChange={e => setMemberForm({ ...memberForm, skills: e.target.value })}
+                            placeholder="例: React, Python, AWS"
+                        />
+                    </div>
+                    <div className="resource-matrix__form-actions">
+                        <button
+                            className="resource-matrix__form-btn resource-matrix__form-btn--save"
+                            onClick={handleSaveMember}
+                        >
+                            保存
+                        </button>
+                        <button
+                            className="resource-matrix__form-btn resource-matrix__form-btn--cancel"
+                            onClick={() => setIsMemberModalOpen(false)}
+                        >
+                            キャンセル
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

@@ -144,7 +144,7 @@ export default function ProjectsView() {
             // Add new project
             const newProject = {
                 ...formData,
-                id: `project - ${Date.now()} `,
+                id: `project-${Date.now()}`,
                 status: 'active',
                 logs: [],
             };
@@ -171,7 +171,7 @@ export default function ProjectsView() {
                     )}
                     <div className="projects-view__view-toggle">
                         <button
-                            className={`projects - view__toggle - btn ${viewMode === 'panel' ? 'projects-view__toggle-btn--active' : ''} `}
+                            className={`projects-view__toggle-btn ${viewMode === 'panel' ? 'projects-view__toggle-btn--active' : ''}`}
                             onClick={() => setViewMode('panel')}
                             title="パネル表示"
                         >
@@ -179,7 +179,7 @@ export default function ProjectsView() {
                             パネル
                         </button>
                         <button
-                            className={`projects - view__toggle - btn ${viewMode === 'gantt' ? 'projects-view__toggle-btn--active' : ''} `}
+                            className={`projects-view__toggle-btn ${viewMode === 'gantt' ? 'projects-view__toggle-btn--active' : ''}`}
                             onClick={() => setViewMode('gantt')}
                             title="ガントチャート表示"
                         >
@@ -229,9 +229,9 @@ export default function ProjectsView() {
                                         </div>
                                         <div className="projects-view__financial-item">
                                             <span className="projects-view__financial-label">コスト差異</span>
-                                            <span className={`projects - view__financial - value ${costVariance > 0 ? 'projects-view__financial-value--negative' :
+                                            <span className={`projects-view__financial-value ${costVariance > 0 ? 'projects-view__financial-value--negative' :
                                                 costVariance < 0 ? 'projects-view__financial-value--positive' : ''
-                                                } `}>
+                                                }`}>
                                                 {costVariance > 0 ? <TrendingUp size={14} /> :
                                                     costVariance < 0 ? <TrendingDown size={14} /> :
                                                         <Minus size={14} />}
@@ -440,7 +440,7 @@ function ProjectDetail({
             });
         } else {
             addAllocation({
-                id: `alloc - ${Date.now()} `,
+                id: `alloc-${Date.now()}`,
                 ...allocationForm,
                 projectId: project.id
             });
@@ -540,7 +540,7 @@ function ProjectDetail({
                             <Bar dataKey="実績" radius={[0, 4, 4, 0]}>
                                 {financialData.map((entry, index) => (
                                     <Cell
-                                        key={`cell - ${index} `}
+                                        key={`cell-${index}`}
                                         fill={index === 1 && costVariance > 5
                                             ? 'var(--color-accent-red)'
                                             : 'var(--color-accent-purple)'

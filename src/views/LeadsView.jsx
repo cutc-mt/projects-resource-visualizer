@@ -801,17 +801,7 @@ export default function LeadsView() {
                 )}
             </Modal>
 
-            {/* AI Advice Button */}
-            <div className="lead-detail__ai-advice">
-                <button
-                    className="lead-detail__action-btn lead-detail__action-btn--ai"
-                    onClick={() => setIsAIAdviceOpen(true)}
-                >
-                    <Bot size={16} />
-                    AIにアドバイスを求める
-                    <span className="lead-detail__ai-advice-beta">β版</span>
-                </button>
-            </div>
+
 
             {/* AI Advice Modal */}
             <AIAdviceModal

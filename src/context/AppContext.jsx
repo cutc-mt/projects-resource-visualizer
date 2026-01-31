@@ -24,6 +24,9 @@ const ACTIONS = {
     ADD_ALLOCATION: 'ADD_ALLOCATION',
     UPDATE_ALLOCATION: 'UPDATE_ALLOCATION',
     DELETE_ALLOCATION: 'DELETE_ALLOCATION',
+    ADD_MEMBER: 'ADD_MEMBER',
+    UPDATE_MEMBER: 'UPDATE_MEMBER',
+    DELETE_MEMBER: 'DELETE_MEMBER',
 };
 
 // Log action types
@@ -97,10 +100,36 @@ function appReducer(state, action) {
                 ...state,
                 allocations: state.allocations.filter(a => a.id !== action.payload),
             };
+        case ACTIONS.ADD_MEMBER:
+            return { ...state, members: [...state.members, action.payload] };
+        case ACTIONS.UPDATE_MEMBER:
+            return {
+                ...state,
+                members: state.members.map(m =>
+                    m.id === action.payload.id ? { ...m, ...action.payload } : m
+                ),
+            };
+        case ACTIONS.DELETE_MEMBER:
+            return {
+                ...state,
+                members: state.members.filter(m => m.id !== action.payload),
+                allocations: state.allocations.filter(a => a.memberId !== action.payload),
+            };
         default:
             return state;
     }
 }
+
+import { createLogEntry, calculateDiff } from '../services/logger';
+
+// ... (imports remain the same)
+
+// ... (initialState and ACTIONS remain the same)
+
+
+
+// ... (appReducer remains the same)
+
 
 // Context
 const AppContext = createContext(null);
@@ -131,24 +160,37 @@ export function AppProvider({ children, managerMode = false }) {
         }
     }, []);
 
-    // Update logs (append-only)
-    const [updateLogs, setUpdateLogs] = useState([]);
+    // Update logs (persistent)
+    const [updateLogs, setUpdateLogs] = useState(() => {
+        try {
+            const saved = localStorage.getItem('audit_logs');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
 
-    // Add a log entry
-    const addLog = useCallback((projectId, projectName, action, details = null) => {
-        const log = {
-            id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            timestamp: new Date().toISOString(),
-            projectId,
-            projectName,
-            action,
-            details,
-        };
-        setUpdateLogs(prev => [log, ...prev]); // Prepend for newest first
+    // Save logs to local storage whenever they change
+    const [logsLoaded, setLogsLoaded] = useState(false);
+
+    // Initial load effect to ensure we don't overwrite with empty array on first render if strictly controlled
+    // But useState initializer handles it. We just need to save subsequent updates.
+
+    const addLogEntry = useCallback((entry) => {
+        setUpdateLogs(prev => {
+            const newLogs = [entry, ...prev].slice(0, 1000); // Keep last 1000 logs
+            try {
+                localStorage.setItem('audit_logs', JSON.stringify(newLogs));
+            } catch (e) {
+                console.error("Failed to save logs", e);
+            }
+            return newLogs;
+        });
     }, []);
 
     // Derived data using useMemo for performance
     const derivedData = useMemo(() => {
+        // ... (Keep existing derived data logic)
         // Projects by status
         const leads = state.projects.filter(p => p.status === 'lead');
         const activeProjects = state.projects.filter(p => p.status === 'active');
@@ -202,45 +244,203 @@ export function AppProvider({ children, managerMode = false }) {
 
         addProject: (project) => {
             dispatch({ type: ACTIONS.ADD_PROJECT, payload: project });
-            addLog(project.id, project.name, LOG_ACTIONS.ADD, { status: project.status });
+
+            const log = createLogEntry(
+                'projects',
+                project.id,
+                'create',
+                [], // No changes on create, the snapshot is the object itself effectively
+                project,
+                'current_user',
+                project.name
+            );
+            addLogEntry(log);
         },
 
         updateProject: (project) => {
             const oldProject = state.projects.find(p => p.id === project.id);
             dispatch({ type: ACTIONS.UPDATE_PROJECT, payload: project });
-            addLog(project.id, project.name, LOG_ACTIONS.UPDATE, {
-                changedFields: Object.keys(project).filter(key =>
-                    oldProject && project[key] !== oldProject[key] && key !== 'id'
-                )
-            });
+
+            if (oldProject) {
+                const changes = calculateDiff(oldProject, project, ['logs', 'aiAdvices']);
+                if (changes.length > 0) {
+                    const log = createLogEntry(
+                        'projects',
+                        project.id,
+                        'update',
+                        changes,
+                        null,
+                        'current_user',
+                        project.name
+                    );
+                    addLogEntry(log);
+                }
+            }
         },
 
         deleteProject: (projectId) => {
             const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                addLog(projectId, project.name, LOG_ACTIONS.DELETE);
-            }
             dispatch({ type: ACTIONS.DELETE_PROJECT, payload: projectId });
+
+            if (project) {
+                const log = createLogEntry(
+                    'projects',
+                    projectId,
+                    'delete',
+                    [],
+                    project,
+                    'current_user',
+                    project.name
+                );
+                addLogEntry(log);
+            }
         },
 
         convertLeadToProject: (projectId, projectData) => {
             const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                addLog(projectId, project.name, LOG_ACTIONS.CONVERT, {
-                    previousStatus: 'lead',
-                    newStatus: 'active'
-                });
-            }
             dispatch({
                 type: ACTIONS.CONVERT_LEAD_TO_PROJECT,
                 payload: { projectId, projectData }
             });
+
+            if (project) {
+                const log = createLogEntry(
+                    'projects',
+                    projectId,
+                    'convert',
+                    [
+                        { field: 'status', old: 'lead', new: 'active' },
+                        ...calculateDiff({}, projectData) // Add any other data changes included in conversion
+                    ],
+                    null,
+                    'current_user',
+                    project.name
+                );
+                addLogEntry(log);
+            }
         },
 
-        addAllocation: (allocation) => dispatch({ type: ACTIONS.ADD_ALLOCATION, payload: allocation }),
-        updateAllocation: (allocation) => dispatch({ type: ACTIONS.UPDATE_ALLOCATION, payload: allocation }),
-        deleteAllocation: (allocationId) => dispatch({ type: ACTIONS.DELETE_ALLOCATION, payload: allocationId }),
-    }), [state.projects, addLog]);
+        addAllocation: (allocation) => {
+            dispatch({ type: ACTIONS.ADD_ALLOCATION, payload: allocation });
+
+            // Resolve names for display
+            const project = state.projects.find(p => p.id === allocation.projectId);
+            const member = state.members.find(m => m.id === allocation.memberId);
+            const targetName = `${member?.name || '不明'} (${project?.name || '不明'})`;
+
+            const log = createLogEntry(
+                'allocations',
+                allocation.id,
+                'create',
+                [],
+                allocation,
+                'current_user',
+                targetName
+            );
+            addLogEntry(log);
+        },
+
+        updateAllocation: (allocation) => {
+            const oldAllocation = state.allocations.find(a => a.id === allocation.id);
+            dispatch({ type: ACTIONS.UPDATE_ALLOCATION, payload: allocation });
+
+            if (oldAllocation) {
+                const project = state.projects.find(p => p.id === allocation.projectId);
+                const member = state.members.find(m => m.id === allocation.memberId);
+                const targetName = `${member?.name || '不明'} (${project?.name || '不明'})`;
+
+                const changes = calculateDiff(oldAllocation, allocation);
+                if (changes.length > 0) {
+                    const log = createLogEntry(
+                        'allocations',
+                        allocation.id,
+                        'update',
+                        changes,
+                        null,
+                        'current_user',
+                        targetName
+                    );
+                    addLogEntry(log);
+                }
+            }
+        },
+
+        deleteAllocation: (allocationId) => {
+            const allocation = state.allocations.find(a => a.id === allocationId);
+            dispatch({ type: ACTIONS.DELETE_ALLOCATION, payload: allocationId });
+
+            if (allocation) {
+                const project = state.projects.find(p => p.id === allocation.projectId);
+                const member = state.members.find(m => m.id === allocation.memberId);
+                const targetName = `${member?.name || '不明'} (${project?.name || '不明'})`;
+
+                const log = createLogEntry(
+                    'allocations',
+                    allocationId,
+                    'delete',
+                    [],
+                    allocation,
+                    'current_user',
+                    targetName
+                );
+                addLogEntry(log);
+            }
+        },
+
+        addMember: (member) => {
+            dispatch({ type: ACTIONS.ADD_MEMBER, payload: member });
+
+            const log = createLogEntry(
+                'members',
+                member.id,
+                'create',
+                [],
+                member,
+                'current_user',
+                member.name
+            );
+            addLogEntry(log);
+        },
+
+        updateMember: (member) => {
+            const oldMember = state.members.find(m => m.id === member.id);
+            dispatch({ type: ACTIONS.UPDATE_MEMBER, payload: member });
+
+            if (oldMember) {
+                const changes = calculateDiff(oldMember, member);
+                if (changes.length > 0) {
+                    const log = createLogEntry(
+                        'members',
+                        member.id,
+                        'update',
+                        changes,
+                        null,
+                        'current_user',
+                        member.name
+                    );
+                    addLogEntry(log);
+                }
+            }
+        },
+
+        deleteMember: (memberId) => {
+            const member = state.members.find(m => m.id === memberId);
+            dispatch({ type: ACTIONS.DELETE_MEMBER, payload: memberId });
+
+            if (member) {
+                const log = createLogEntry(
+                    'members',
+                    memberId,
+                    'delete',
+                    [],
+                    member,
+                    'current_user',
+                    member.name
+                );
+                addLogEntry(log);
+            }
+        },
+    }), [state.projects, state.allocations, state.members, addLogEntry]);
 
     const value = {
         ...state,
@@ -267,4 +467,3 @@ export function useApp() {
 }
 
 export default AppContext;
-

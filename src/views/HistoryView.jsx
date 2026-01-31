@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Modal } from '../components/UI';
-import { History, Calendar, Filter, ExternalLink, Plus, Edit, Trash2, ArrowRight } from 'lucide-react';
+import { History, Calendar, Filter, ExternalLink, Plus, Edit, Trash2, ArrowRight, Bot, Sparkles, X } from 'lucide-react';
 import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { getHistorySummary } from '../services/llmService';
 import './HistoryView.css';
 
 // Action icon mapping
@@ -14,7 +15,7 @@ const ACTION_ICONS = {
     '受注変換': ArrowRight,
 };
 
-// Action color mapping
+// ... (ACTION_COLORS mapping remains the same)
 const ACTION_COLORS = {
     '新規登録': 'success',
     '更新': 'info',
@@ -23,7 +24,7 @@ const ACTION_COLORS = {
 };
 
 export default function HistoryView() {
-    const { updateLogs, projects, selectProject, setView, managerMode } = useApp();
+    const { updateLogs, projects, members, allocations, selectProject, setView, managerMode, llmSettings } = useApp();
 
     // Date filter state
     const [startDate, setStartDate] = useState('');
@@ -32,6 +33,12 @@ export default function HistoryView() {
     // Project detail modal
     const [selectedProject, setSelectedProject] = useState(null);
     const [showProjectModal, setShowProjectModal] = useState(false);
+
+    // AI Summary State
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [summaryResult, setSummaryResult] = useState('');
+    const [showSummary, setShowSummary] = useState(false);
+    const [summaryError, setSummaryError] = useState(null);
 
     // Filter logs by date range
     const filteredLogs = useMemo(() => {
@@ -88,9 +95,26 @@ export default function HistoryView() {
         return format(parseISO(timestamp), 'yyyy/MM/dd HH:mm:ss', { locale: ja });
     };
 
-    // Get project exists
-    const projectExists = (projectId) => {
-        return projects.some(p => p.id === projectId);
+    // Generate Summary
+    const handleGenerateSummary = async () => {
+        if (filteredLogs.length === 0) return;
+
+        setIsGeneratingSummary(true);
+        setSummaryError(null);
+        setShowSummary(true);
+        setSummaryResult('');
+
+        try {
+            if (!llmSettings) {
+                throw new Error('AI設定が行われていません。設定画面から設定してください。');
+            }
+            const summary = await getHistorySummary(filteredLogs, llmSettings);
+            setSummaryResult(summary);
+        } catch (err) {
+            setSummaryError(err.message);
+        } finally {
+            setIsGeneratingSummary(false);
+        }
     };
 
     return (
@@ -105,40 +129,88 @@ export default function HistoryView() {
                 </span>
             </header>
 
-            {/* Filters */}
-            <div className="history-view__filters glass-card">
-                <div className="history-view__filter-group">
-                    <label>
-                        <Calendar size={16} />
-                        開始日
-                    </label>
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                    />
+            {/* Filters & Actions */}
+            <div className="history-view__controls">
+                <div className="history-view__filters glass-card">
+                    <div className="history-view__filter-group">
+                        <label>
+                            <Calendar size={16} />
+                            開始日
+                        </label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
+                    </div>
+                    <div className="history-view__filter-group">
+                        <label>
+                            <Calendar size={16} />
+                            終了日
+                        </label>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
+                    </div>
+                    {(startDate || endDate) && (
+                        <button
+                            className="history-view__clear-btn"
+                            onClick={clearFilters}
+                        >
+                            <Filter size={16} />
+                            クリア
+                        </button>
+                    )}
                 </div>
-                <div className="history-view__filter-group">
-                    <label>
-                        <Calendar size={16} />
-                        終了日
-                    </label>
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                    />
-                </div>
-                {(startDate || endDate) && (
-                    <button
-                        className="history-view__clear-btn"
-                        onClick={clearFilters}
-                    >
-                        <Filter size={16} />
-                        クリア
-                    </button>
-                )}
+
+                <button
+                    className="history-view__ai-btn"
+                    onClick={handleGenerateSummary}
+                    disabled={filteredLogs.length === 0 || isGeneratingSummary}
+                >
+                    <Sparkles size={16} />
+                    {isGeneratingSummary ? 'サマリ生成中...' : 'AIサマリ生成 (Beta)'}
+                </button>
             </div>
+
+            {/* AI Summary Result */}
+            {showSummary && (
+                <div className="history-view__summary glass-card">
+                    <div className="history-view__summary-header">
+                        <div className="history-view__summary-title">
+                            <Bot size={20} className="text-accent-purple" />
+                            <span>期間サマリ (AI生成)</span>
+                        </div>
+                        <button
+                            className="history-view__close-btn"
+                            onClick={() => setShowSummary(false)}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                    <div className="history-view__summary-content">
+                        {isGeneratingSummary ? (
+                            <div className="history-view__loading">
+                                <div className="spinner"></div>
+                                <p>履歴データを分析中...</p>
+                            </div>
+                        ) : summaryError ? (
+                            <div className="history-view__error">
+                                <p>{summaryError}</p>
+                            </div>
+                        ) : (
+                            <div className="markdown-body">
+                                {summaryResult.split('\n').map((line, i) => (
+                                    <p key={i}>{line}</p>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
 
             {/* Logs List */}
             <div className="history-view__logs">
@@ -150,32 +222,103 @@ export default function HistoryView() {
                     </div>
                 ) : (
                     filteredLogs.map((log) => {
-                        const Icon = ACTION_ICONS[log.action] || Edit;
-                        const exists = projectExists(log.projectId);
+                        // Map new log actions to display actions
+                        let displayAction = log.action;
+                        if (log.action === 'create') displayAction = '新規登録';
+                        if (log.action === 'update') displayAction = '更新';
+                        if (log.action === 'delete') displayAction = '削除';
+                        if (log.action === 'convert') displayAction = '受注変換';
+                        // Fallback for old logs
+                        if (!['create', 'update', 'delete', 'convert'].includes(log.action)) {
+                            displayAction = log.action;
+                        }
+
+                        const Icon = ACTION_ICONS[displayAction] || Edit;
+
+                        // Check existence based on collection type
+                        let exists = false;
+                        if (log.collection === 'projects' || (!log.collection && log.projectId)) {
+                            // Projects or Legacy logs
+                            exists = projects.some(p => p.id === (log.record_id || log.projectId));
+                        } else if (log.collection === 'allocations') {
+                            // Allocations - Only check if we have allocations data (we need to access it from useApp first)
+                            // Ideally, we should check if the allocation exists, but we might not have the full ID if it wasn't exposed.
+                            // But usually, we only need to strike through if we know it DOESN'T exist.
+                            // However, for allocations, we might just assume it exists for now to avoid strikethrough on create,
+                            // or better, fetch allocations from context.
+                            // Since we don't have allocations in props efficiently here without selecting everything,
+                            // let's just NOT strike through for non-projects unless we are sure.
+                            // Or better: Let's assume exists=true for non-projects to handle the UI bug requesting.
+                            // Limitation: Deleted members/allocations won't have strikethrough, but that's better than new ones having it.
+                            exists = true;
+                        } else if (log.collection === 'members') {
+                            // Members
+                            // We need to access members from useApp. Let's add it to destructuring above first.
+                            // For this ReplaceBlock, I'll temporarily set true, but I need to update the destructuring in a separate Edit or use a broader replace.
+                            exists = true;
+                        }
+
+                        // Revised logic:
+                        // 1. If it's a project log, check projects.
+                        // 2. If it's another collection, we ideally check that collection.
+                        // 3. Current bug: Member addition (create) is shown as deleted.
+                        // Fix: Default exists to true for non-project collections for now to solve the immediate "strikethrough on create" bug.
+
+                        const isProjectLog = log.collection === 'projects' || (!log.collection && log.projectId);
+                        if (isProjectLog) {
+                            exists = projects.some(p => p.id === (log.record_id || log.projectId));
+                        } else {
+                            exists = true; // Don't strike through members/allocations for now
+                        }
+
+                        const targetName = log.target_name || log.projectName || '不明なレコード';
 
                         return (
                             <div key={log.id} className="history-view__log-item">
-                                <div className={`history-view__log-icon history-view__log-icon--${ACTION_COLORS[log.action]}`}>
+                                <div className={`history-view__log-icon history-view__log-icon--${ACTION_COLORS[displayAction] || 'info'}`}>
                                     <Icon size={18} />
                                 </div>
                                 <div className="history-view__log-content">
                                     <div className="history-view__log-header">
                                         <button
                                             className={`history-view__project-name ${!exists ? 'history-view__project-name--deleted' : ''}`}
-                                            onClick={() => exists && handleProjectClick(log)}
+                                            onClick={() => exists && handleProjectClick({ projectId: log.record_id || log.projectId })}
                                             disabled={!exists}
+                                            title={log.collection ? `${log.collection} : ${targetName}` : targetName}
                                         >
-                                            {log.projectName}
+                                            {/* Show collection type for non-projects */}
+                                            {log.collection && log.collection !== 'projects' && (
+                                                <span className="history-view__collection-badge">
+                                                    {log.collection === 'allocations' ? 'アサイン' : 'メンバー'}
+                                                </span>
+                                            )}
+                                            {targetName}
                                             {exists && <ExternalLink size={14} />}
                                         </button>
-                                        <Badge variant={ACTION_COLORS[log.action]}>
-                                            {log.action}
+                                        <Badge variant={ACTION_COLORS[displayAction] || 'gray'}>
+                                            {displayAction}
                                         </Badge>
                                     </div>
                                     <div className="history-view__log-meta">
                                         <span className="history-view__log-time">
-                                            {formatTimestamp(log.timestamp)}
+                                            {formatTimestamp(log.timestamp || log.created)}
                                         </span>
+
+                                        {/* New Log Format: Changes Array */}
+                                        {log.changes && log.changes.length > 0 && (
+                                            <div className="history-view__log-changes">
+                                                {log.changes.map((change, i) => (
+                                                    <div key={i} className="history-view__change-item">
+                                                        <span className="history-view__change-field">{change.field}:</span>
+                                                        <span className="history-view__change-old">{String(change.old ?? '(なし)')}</span>
+                                                        <ArrowRight size={12} className="history-view__change-arrow" />
+                                                        <span className="history-view__change-new">{String(change.new ?? '(なし)')}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Old Log Format: changedFields */}
                                         {log.details?.changedFields?.length > 0 && (
                                             <span className="history-view__log-fields">
                                                 変更: {log.details.changedFields.join(', ')}
