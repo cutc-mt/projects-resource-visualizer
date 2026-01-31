@@ -13,13 +13,14 @@ export default function DashboardView() {
     const totalLeadValue = leads.reduce((sum, l) => sum + l.estimatedBudget, 0);
 
     // Calculate weighted pipeline using current probability weights
+    // Weights from settings are in percentage (0-100), convert to coefficient (0-1)
     const weightedPipeline = leads.reduce((sum, l) => {
         const probability = l.probability || 0;
         let weight = 0.1;
-        if (probability >= 80) weight = probabilityWeights.HIGH;
-        else if (probability >= 50) weight = probabilityWeights.MEDIUM;
-        else if (probability >= 25) weight = probabilityWeights.LOW;
-        else weight = probabilityWeights.UNCERTAIN;
+        if (probability >= 80) weight = (probabilityWeights.high ?? probabilityWeights.HIGH ?? 80) / 100;
+        else if (probability >= 50) weight = (probabilityWeights.medium ?? probabilityWeights.MEDIUM ?? 50) / 100;
+        else if (probability >= 25) weight = (probabilityWeights.low ?? probabilityWeights.LOW ?? 20) / 100;
+        else weight = (probabilityWeights.uncertain ?? probabilityWeights.UNCERTAIN ?? 10) / 100;
         return sum + (l.estimatedBudget * weight);
     }, 0);
 

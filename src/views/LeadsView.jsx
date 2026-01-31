@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { getProbabilityLevel, ROLES, PRE_SALES_ROLES } from '../data/types';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Modal, ProjectForm } from '../components/UI';
+import AIAdviceModal from '../components/UI/AIAdviceModal';
+import AIAdviceHistoryItem from '../components/UI/AIAdviceHistoryItem';
 import LeadsBubbleChart from '../components/Dashboard/LeadsBubbleChart';
-import { Calendar, DollarSign, MessageSquare, AlertTriangle, Users, Plus, Trash2, Edit2, Briefcase, ArrowRightCircle } from 'lucide-react';
+import { Calendar, DollarSign, MessageSquare, AlertTriangle, Users, Plus, Trash2, Edit2, Briefcase, ArrowRightCircle, Bot } from 'lucide-react';
 import { format, parseISO, addMonths, startOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import './LeadsView.css';
@@ -43,6 +45,7 @@ export default function LeadsView() {
     const [isAddingLead, setIsAddingLead] = useState(false);
     const [isEditingLead, setIsEditingLead] = useState(false);
     const [isConvertingLead, setIsConvertingLead] = useState(false);
+    const [isAIAdviceOpen, setIsAIAdviceOpen] = useState(false);
 
     // State for prospect allocations (future project allocations)
     const [isAddingAllocation, setIsAddingAllocation] = useState(false);
@@ -454,6 +457,17 @@ export default function LeadsView() {
                             </div>
                         )}
 
+                        {/* AI Advice Button */}
+                        <div className="lead-detail__ai-advice">
+                            <button
+                                className="lead-detail__action-btn lead-detail__action-btn--ai"
+                                onClick={() => setIsAIAdviceOpen(true)}
+                            >
+                                <Bot size={16} />
+                                AIにアドバイスを求める
+                            </button>
+                        </div>
+
                         <div className="lead-detail__section">
                             <h4 className="lead-detail__section-title">課題・ニーズ</h4>
                             <p className="lead-detail__text">{selectedLead.needs}</p>
@@ -508,6 +522,19 @@ export default function LeadsView() {
                                 ))}
                             </div>
                         </div>
+
+                        {selectedLead.aiAdvices?.length > 0 && (
+                            <div className="lead-detail__section lead-detail__section--ai">
+                                <h4 className="lead-detail__section-title">
+                                    <Bot size={16} /> AIアドバイス履歴
+                                </h4>
+                                <div className="lead-detail__ai-history">
+                                    {selectedLead.aiAdvices.map(advice => (
+                                        <AIAdviceHistoryItem key={advice.id} advice={advice} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Pre-Sales Staff Section */}
                         <div className="lead-detail__section lead-detail__section--presales">
@@ -773,6 +800,25 @@ export default function LeadsView() {
                     </div>
                 )}
             </Modal>
+
+            {/* AI Advice Button */}
+            <div className="lead-detail__ai-advice">
+                <button
+                    className="lead-detail__action-btn lead-detail__action-btn--ai"
+                    onClick={() => setIsAIAdviceOpen(true)}
+                >
+                    <Bot size={16} />
+                    AIにアドバイスを求める
+                    <span className="lead-detail__ai-advice-beta">β版</span>
+                </button>
+            </div>
+
+            {/* AI Advice Modal */}
+            <AIAdviceModal
+                project={selectedLead}
+                isOpen={isAIAdviceOpen}
+                onClose={() => setIsAIAdviceOpen(false)}
+            />
         </div>
     );
 }

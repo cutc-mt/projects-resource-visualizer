@@ -112,6 +112,25 @@ export function AppProvider({ children, managerMode = false }) {
     // Probability weights for sales forecast calculations
     const [probabilityWeights, setProbabilityWeights] = useState(DEFAULT_PROBABILITY_WEIGHTS);
 
+    // LLM Settings with localStorage persistence
+    const [llmSettings, setLLMSettingsState] = useState(() => {
+        try {
+            const saved = localStorage.getItem('llmSettings');
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    const setLLMSettings = useCallback((settings) => {
+        setLLMSettingsState(settings);
+        try {
+            localStorage.setItem('llmSettings', JSON.stringify(settings));
+        } catch {
+            // Ignore localStorage errors
+        }
+    }, []);
+
     // Update logs (append-only)
     const [updateLogs, setUpdateLogs] = useState([]);
 
@@ -230,6 +249,8 @@ export function AppProvider({ children, managerMode = false }) {
         managerMode,
         probabilityWeights,
         setProbabilityWeights,
+        llmSettings,
+        setLLMSettings,
         updateLogs,
     };
 

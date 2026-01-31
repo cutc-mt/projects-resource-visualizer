@@ -68,15 +68,41 @@ export const getCurrentFiscalYear = () => {
 };
 
 /**
+ * Normalize weights from SettingsView format (lowercase keys, 0-100 percentages)
+ * to calculation format (uppercase keys, 0-1 coefficients)
+ * @param {Object} weights - Either SettingsView format or DEFAULT_PROBABILITY_WEIGHTS format
+ * @returns {Object} Normalized weights in uppercase keys with 0-1 coefficients
+ */
+const normalizeWeights = (weights) => {
+    if (!weights) return DEFAULT_PROBABILITY_WEIGHTS;
+
+    // If already has uppercase keys (from DEFAULT_PROBABILITY_WEIGHTS)
+    if (weights.HIGH !== undefined) {
+        return weights;
+    }
+
+    // Convert from SettingsView format (lowercase, 0-100) to calculation format (uppercase, 0-1)
+    return {
+        HIGH: (weights.high ?? 80) / 100,
+        MEDIUM: (weights.medium ?? 50) / 100,
+        LOW: (weights.low ?? 20) / 100,
+        UNCERTAIN: (weights.uncertain ?? 10) / 100
+    };
+};
+
+/**
  * Calculate monthly sales data
  * 
  * @param {Array} projects - All projects (leads and active)
  * @param {string[]} months - Array of YYYY-MM strings to calculate for
- * @param {Object} weights - Probability weights for leads
+ * @param {Object} weights - Probability weights for leads (either format accepted)
  * @param {string} mode - 'revenue' (end month) or 'order' (start month)
  * @returns {Array} Monthly sales data with confirmed and forecast values
  */
 export const calculateMonthlySales = (projects, months, weights = DEFAULT_PROBABILITY_WEIGHTS, mode = CALC_MODE.REVENUE) => {
+    // Normalize weights to ensure consistent format
+    const normalizedWeights = normalizeWeights(weights);
+
     return months.map(month => {
         let confirmed = 0;      // Active/completed projects
         let forecast = 0;       // Weighted lead value
@@ -99,7 +125,7 @@ export const calculateMonthlySales = (projects, months, weights = DEFAULT_PROBAB
                     // Forecast from leads - apply probability weight
                     const probability = project.probability || 0;
                     const levelKey = getProbabilityLevelKey(probability);
-                    const weight = weights[levelKey] ?? 0;
+                    const weight = normalizedWeights[levelKey] ?? 0;
 
                     forecastRaw += revenue;
                     forecast += revenue * weight;

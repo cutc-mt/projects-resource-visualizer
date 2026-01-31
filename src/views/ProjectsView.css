@@ -89,6 +89,7 @@
     margin-bottom: var(--spacing-md);
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -615,6 +616,55 @@
 .allocation-list__item-btn--delete:hover {
     background: rgba(239, 68, 68, 0.2);
     color: var(--color-accent-red);
+}
+
+/* AI Advice Button */
+.project-detail__ai-advice {
+    margin-bottom: var(--spacing-md);
+}
+
+.project-detail__action-btn--ai {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: linear-gradient(135deg, var(--color-accent-purple), #8b5cf6);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.project-detail__action-btn--ai:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
+}
+
+.project-detail__ai-advice-beta {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    font-weight: bold;
+    margin-left: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* AI Advice History Section */
+.project-detail__section--ai {
+    background: rgba(139, 92, 246, 0.05);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.project-detail__ai-history {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
 @media (max-width: 768px) {

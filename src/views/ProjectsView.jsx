@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { ROLES } from '../data/types';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Modal, ProjectForm } from '../components/UI';
+import { ProjectForm, StatCard, Card, CardHeader, CardTitle, CardContent, CardFooter, Modal, Badge } from '../components/UI';
+import AIAdviceModal from '../components/UI/AIAdviceModal';
+import AIAdviceHistoryItem from '../components/UI/AIAdviceHistoryItem';
 import ProjectsGantt from '../components/Dashboard/ProjectsGantt';
 import {
     Calendar,
@@ -16,7 +18,8 @@ import {
     GanttChart,
     Plus,
     Edit2,
-    Trash2
+    Trash2,
+    Bot
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, addMonths, startOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -67,6 +70,7 @@ export default function ProjectsView() {
     // State for project CRUD
     const [isAddingProject, setIsAddingProject] = useState(false);
     const [isEditingProject, setIsEditingProject] = useState(false);
+    const [isAIAdviceOpen, setIsAIAdviceOpen] = useState(false);
 
     const selectedProject = activeProjects.find(p => p.id === selectedProjectId);
 
@@ -140,7 +144,7 @@ export default function ProjectsView() {
             // Add new project
             const newProject = {
                 ...formData,
-                id: `project-${Date.now()}`,
+                id: `project - ${Date.now()} `,
                 status: 'active',
                 logs: [],
             };
@@ -167,7 +171,7 @@ export default function ProjectsView() {
                     )}
                     <div className="projects-view__view-toggle">
                         <button
-                            className={`projects-view__toggle-btn ${viewMode === 'panel' ? 'projects-view__toggle-btn--active' : ''}`}
+                            className={`projects - view__toggle - btn ${viewMode === 'panel' ? 'projects-view__toggle-btn--active' : ''} `}
                             onClick={() => setViewMode('panel')}
                             title="パネル表示"
                         >
@@ -175,7 +179,7 @@ export default function ProjectsView() {
                             パネル
                         </button>
                         <button
-                            className={`projects-view__toggle-btn ${viewMode === 'gantt' ? 'projects-view__toggle-btn--active' : ''}`}
+                            className={`projects - view__toggle - btn ${viewMode === 'gantt' ? 'projects-view__toggle-btn--active' : ''} `}
                             onClick={() => setViewMode('gantt')}
                             title="ガントチャート表示"
                         >
@@ -225,9 +229,9 @@ export default function ProjectsView() {
                                         </div>
                                         <div className="projects-view__financial-item">
                                             <span className="projects-view__financial-label">コスト差異</span>
-                                            <span className={`projects-view__financial-value ${costVariance > 0 ? 'projects-view__financial-value--negative' :
+                                            <span className={`projects - view__financial - value ${costVariance > 0 ? 'projects-view__financial-value--negative' :
                                                 costVariance < 0 ? 'projects-view__financial-value--positive' : ''
-                                                }`}>
+                                                } `}>
                                                 {costVariance > 0 ? <TrendingUp size={14} /> :
                                                     costVariance < 0 ? <TrendingDown size={14} /> :
                                                         <Minus size={14} />}
@@ -315,9 +319,17 @@ export default function ProjectsView() {
                         managerMode={managerMode}
                         onEdit={handleEditProject}
                         onDelete={handleDeleteProject}
+                        onAIAdvice={() => setIsAIAdviceOpen(true)}
                     />
                 )}
             </Modal>
+
+            {/* AI Advice Modal */}
+            <AIAdviceModal
+                project={selectedProject}
+                isOpen={isAIAdviceOpen}
+                onClose={() => setIsAIAdviceOpen(false)}
+            />
         </div>
     );
 }
@@ -333,7 +345,8 @@ function ProjectDetail({
     deleteAllocation,
     managerMode,
     onEdit,
-    onDelete
+    onDelete,
+    onAIAdvice
 }) {
     const [isAddingAllocation, setIsAddingAllocation] = useState(false);
     const [editingAllocationId, setEditingAllocationId] = useState(null);
@@ -427,7 +440,7 @@ function ProjectDetail({
             });
         } else {
             addAllocation({
-                id: `alloc-${Date.now()}`,
+                id: `alloc - ${Date.now()} `,
                 ...allocationForm,
                 projectId: project.id
             });
@@ -485,6 +498,18 @@ function ProjectDetail({
                 </div>
             )}
 
+            {/* AI Advice Button */}
+            <div className="project-detail__ai-advice">
+                <button
+                    className="project-detail__action-btn project-detail__action-btn--ai"
+                    onClick={onAIAdvice}
+                >
+                    <Bot size={16} />
+                    AIにアドバイスを求める
+                    <span className="project-detail__ai-advice-beta">β版</span>
+                </button>
+            </div>
+
             <div className="project-detail__section">
                 <h4 className="project-detail__section-title">概要</h4>
                 <p>{project.description}</p>
@@ -515,7 +540,7 @@ function ProjectDetail({
                             <Bar dataKey="実績" radius={[0, 4, 4, 0]}>
                                 {financialData.map((entry, index) => (
                                     <Cell
-                                        key={`cell-${index}`}
+                                        key={`cell - ${index} `}
                                         fill={index === 1 && costVariance > 5
                                             ? 'var(--color-accent-red)'
                                             : 'var(--color-accent-purple)'
@@ -553,6 +578,20 @@ function ProjectDetail({
                             <li key={i}>{risk}</li>
                         ))}
                     </ul>
+                </div>
+            )}
+
+            {/* AI Advice History */}
+            {project.aiAdvices?.length > 0 && (
+                <div className="project-detail__section project-detail__section--ai">
+                    <h4 className="project-detail__section-title">
+                        <Bot size={16} /> AIアドバイス履歴
+                    </h4>
+                    <div className="project-detail__ai-history">
+                        {project.aiAdvices.map(advice => (
+                            <AIAdviceHistoryItem key={advice.id} advice={advice} />
+                        ))}
+                    </div>
                 </div>
             )}
 
