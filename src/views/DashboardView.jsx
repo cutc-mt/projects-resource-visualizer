@@ -1,4 +1,4 @@
-import { TrendingUp, FolderKanban, Users, DollarSign } from 'lucide-react';
+import { TrendingUp, FolderKanban, Users, DollarSign, JapaneseYen, Coins } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { StatCard } from '../components/UI';
 import LeadsBubbleChart from '../components/Dashboard/LeadsBubbleChart';
@@ -7,20 +7,23 @@ import SalesChart from '../components/Dashboard/SalesChart';
 import './DashboardView.css';
 
 export default function DashboardView() {
-    const { leads, activeProjects, members, selectProject, setView, managerMode, probabilityWeights } = useApp();
+    const { leads, activeProjects, members, selectProject, setView, managerMode, probabilityWeights, formatCurrency, currency } = useApp();
 
     // Calculate stats
     const totalLeadValue = leads.reduce((sum, l) => sum + l.estimatedBudget, 0);
 
     // Calculate weighted pipeline using current probability weights
-    // Weights from settings are in percentage (0-100), convert to coefficient (0-1)
+    // Weights are decimal (0.0-1.0)
     const weightedPipeline = leads.reduce((sum, l) => {
         const probability = l.probability || 0;
         let weight = 0.1;
-        if (probability >= 80) weight = (probabilityWeights.high ?? probabilityWeights.HIGH ?? 80) / 100;
-        else if (probability >= 50) weight = (probabilityWeights.medium ?? probabilityWeights.MEDIUM ?? 50) / 100;
-        else if (probability >= 25) weight = (probabilityWeights.low ?? probabilityWeights.LOW ?? 20) / 100;
-        else weight = (probabilityWeights.uncertain ?? probabilityWeights.UNCERTAIN ?? 10) / 100;
+
+        // Use uppercase keys as primary, fallback to safe defaults if missing
+        if (probability >= 80) weight = probabilityWeights.HIGH ?? 1.0;
+        else if (probability >= 50) weight = probabilityWeights.MEDIUM ?? 0.7;
+        else if (probability >= 25) weight = probabilityWeights.LOW ?? 0.3; // Default 30%
+        else weight = probabilityWeights.UNCERTAIN ?? 0.1;
+
         return sum + (l.estimatedBudget * weight);
     }, 0);
 
@@ -44,15 +47,15 @@ export default function DashboardView() {
                 />
                 <StatCard
                     title="パイプライン"
-                    value={`¥${(weightedPipeline / 10000).toLocaleString()}万`}
+                    value={formatCurrency(weightedPipeline)}
                     subtitle="加重見込額"
-                    icon={DollarSign}
+                    icon={currency === 'USD' ? DollarSign : currency.startsWith('JPY') ? JapaneseYen : Coins}
                     accentColor="green"
                 />
                 <StatCard
                     title="受注案件"
                     value={activeProjects.length}
-                    subtitle={`売上: ¥${(activeRevenue / 10000).toLocaleString()}万`}
+                    subtitle={`売上: ${formatCurrency(activeRevenue)}`}
                     icon={FolderKanban}
                     accentColor="blue"
                 />

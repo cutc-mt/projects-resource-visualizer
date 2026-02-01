@@ -18,6 +18,8 @@ import './LeadsBubbleChart.css';
 
 // Custom Tooltip
 const CustomTooltip = ({ active, payload }) => {
+    const { formatCurrency } = useApp();
+
     if (active && payload && payload.length) {
         const data = payload[0].payload;
         const probabilityLevel = getProbabilityLevel(data.probability);
@@ -30,7 +32,7 @@ const CustomTooltip = ({ active, payload }) => {
                     <div className="bubble-tooltip__stat">
                         <span className="bubble-tooltip__label">予算</span>
                         <span className="bubble-tooltip__value">
-                            ¥{(data.estimatedBudget / 10000).toLocaleString()}万
+                            {formatCurrency(data.estimatedBudget)}
                         </span>
                     </div>
                     <div className="bubble-tooltip__stat">
@@ -54,22 +56,24 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function LeadsBubbleChart({ onSelectLead }) {
-    const { leads } = useApp();
+    const { leads, currency, formatCurrency } = useApp();
     const [hoveredId, setHoveredId] = useState(null);
 
     // Transform leads data for the chart
     const chartData = useMemo(() => {
+        const divisor = currency === 'JPY_MAN' ? 10000 : 1;
+
         return leads.map(lead => {
             const startDate = parseISO(lead.startDate);
             return {
                 ...lead,
                 x: startDate.getTime(), // X-axis: Start date as timestamp
-                y: lead.estimatedBudget / 10000, // Y-axis: Budget in 万円
-                z: lead.estimatedBudget / 1000000, // Bubble size
+                y: lead.estimatedBudget / divisor, // Y-axis: Budget scaled
+                z: lead.estimatedBudget / 1000000, // Bubble size (keep relative)
                 formattedDate: format(startDate, 'yyyy年M月', { locale: ja })
             };
         });
-    }, [leads]);
+    }, [leads, currency]);
 
     // Get color based on probability
     const getColor = (probability) => {
@@ -102,7 +106,12 @@ export default function LeadsBubbleChart({ onSelectLead }) {
 
     // Format Y-axis tick
     const formatYAxis = (value) => {
-        return `${value.toLocaleString()}万`;
+        if (currency === 'JPY_MAN') return `${value.toLocaleString()}万`;
+        if (currency === 'USD') return `$${value.toLocaleString()}`;
+        // For JPY, if value is large, maybe abbreviate?
+        // But for chart axis, usually we want compact.
+        // If JPY, return raw with commas?
+        return `¥${value.toLocaleString()}`;
     };
 
     return (

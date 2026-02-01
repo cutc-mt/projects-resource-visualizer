@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useApp } from '../../context/AppContext';
 import { PROJECT_STATUS } from '../../data/types';
 import { format } from 'date-fns';
 import './ProjectForm.css';
@@ -15,6 +16,10 @@ import './ProjectForm.css';
 export default function ProjectForm({ initialData, mode = 'lead', onSubmit, onCancel }) {
     const isLead = mode === 'lead';
     const isConvert = mode === 'convert';
+    const { currency } = useApp();
+
+    // Determine input unit label.
+    const unitLabel = currency === 'USD' ? '（USD）' : '（円）';
 
     const getDefaultFormData = () => ({
         projectCode: '',
@@ -213,7 +218,7 @@ export default function ProjectForm({ initialData, mode = 'lead', onSubmit, onCa
 
                 <div className="project-form__field">
                     <label htmlFor="estimatedBudget">
-                        {isLead && !isConvert ? '想定予算（円）' : '売上（円）'}
+                        {isLead && !isConvert ? `想定予算${unitLabel}` : `売上${unitLabel}`}
                     </label>
                     <input
                         type="number"
@@ -229,7 +234,7 @@ export default function ProjectForm({ initialData, mode = 'lead', onSubmit, onCa
                 {(!isLead || isConvert) && (
                     <>
                         <div className="project-form__field">
-                            <label htmlFor="plannedCost">計画コスト（円）</label>
+                            <label htmlFor="plannedCost">計画コスト{unitLabel}</label>
                             <input
                                 type="number"
                                 id="plannedCost"
@@ -241,7 +246,7 @@ export default function ProjectForm({ initialData, mode = 'lead', onSubmit, onCa
                             />
                         </div>
                         <div className="project-form__field">
-                            <label htmlFor="actualCost">実績コスト（円）</label>
+                            <label htmlFor="actualCost">実績コスト{unitLabel}</label>
                             <input
                                 type="number"
                                 id="actualCost"

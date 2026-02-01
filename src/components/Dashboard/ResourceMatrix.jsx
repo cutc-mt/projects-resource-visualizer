@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, Fragment } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ROLES, PRE_SALES_ROLES } from '../../data/types';
 import { format, addMonths, parseISO, startOfMonth } from 'date-fns';
@@ -39,6 +39,7 @@ export default function ResourceMatrix({ managerMode }) {
         projects,
         getProjectById,
         addAllocation,
+        addAllocationsBulk,
         updateAllocation,
         deleteAllocation,
         addMember,
@@ -54,12 +55,14 @@ export default function ResourceMatrix({ managerMode }) {
     const [allocationForm, setAllocationForm] = useState({
         projectId: '',
         role: '',
-        month: '',
+        startMonth: '',
+        endMonth: '',
         percentage: 50,
         isProspect: false,
         isPreSales: false
     });
 
+    // ... (Member Form State & Modal logic remains matching original)
     // Member Form State & Modal
     const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
     const [editingMemberId, setEditingMemberId] = useState(null);
@@ -79,6 +82,7 @@ export default function ResourceMatrix({ managerMode }) {
         }));
     }, [projects]);
 
+    // ... (memberData useMemo remains the same)
     // Calculate member data with utilization per month
     const memberData = useMemo(() => {
         return members.map(member => {
@@ -183,11 +187,13 @@ export default function ResourceMatrix({ managerMode }) {
         setIsAddingAllocation(true);
         setEditingAllocationId(null);
         const firstProject = allProjects[0];
+        const currentMonth = months.find(m => m.isCurrentMonth)?.key || months[0].key;
         setAllocationForm({
             memberId,
             projectId: firstProject?.id || '',
             role: Object.values(ROLES)[0],
-            month: months.find(m => m.isCurrentMonth)?.key || months[0].key,
+            startMonth: currentMonth,
+            endMonth: currentMonth,
             percentage: 50,
             isProspect: firstProject?.isLead || false,
             isPreSales: false
@@ -202,7 +208,8 @@ export default function ResourceMatrix({ managerMode }) {
             memberId: allocation.memberId,
             projectId: allocation.projectId,
             role: allocation.role,
-            month: allocation.month,
+            startMonth: allocation.month,
+            endMonth: allocation.month,
             percentage: allocation.percentage,
             isProspect: allocation.isProspect || false,
             isPreSales: allocation.isPreSales || false
@@ -241,29 +248,54 @@ export default function ResourceMatrix({ managerMode }) {
     };
 
     const handleSaveAllocation = () => {
-        if (!allocationForm.projectId || !allocationForm.role || !allocationForm.month) return;
+        if (!allocationForm.projectId || !allocationForm.role || !allocationForm.startMonth || !allocationForm.endMonth) return;
 
-        const allocationData = {
+        // Generate allocations for the range
+        const newAllocations = [];
+        const start = months.findIndex(m => m.key === allocationForm.startMonth);
+        const end = months.findIndex(m => m.key === allocationForm.endMonth);
+
+        // Validation
+        if (start === -1 || end === -1 || start > end) {
+            alert('期間指定が正しくありません。');
+            return;
+        }
+
+        const baseAllocationData = {
             memberId: allocationForm.memberId,
             projectId: allocationForm.projectId,
             role: allocationForm.role,
-            month: allocationForm.month,
             percentage: allocationForm.percentage,
             isProspect: allocationForm.isProspect,
             isPreSales: allocationForm.isPreSales
         };
 
         if (editingAllocationId) {
+            // Edit mode: currently support editing single allocation only, so we update the single one
+            // Ideally, we might want to support "update for range" but that's complex (overwriting existing?).
+            // For now, let's just update the target month allocated object if start==end, or warn if they want range update.
+            // Wait, UI should probably lock range for edit if we don't support range update properly.
+            // Or simplest: treat edit as updating that specific ID, but "moving" it to another month? Use startMonth as target.
+
             updateAllocation({
                 id: editingAllocationId,
-                ...allocationData
+                ...baseAllocationData,
+                month: allocationForm.startMonth // Use startMonth as the target month
             });
         } else {
-            addAllocation({
-                id: `alloc-${Date.now()}`,
-                ...allocationData
-            });
+            // Bulk Add Mode
+            const timestamp = Date.now();
+            for (let i = start; i <= end; i++) {
+                newAllocations.push({
+                    id: `alloc-${timestamp}-${i}`, // Unique ID per month
+                    ...baseAllocationData,
+                    month: months[i].key
+                });
+            }
+
+            addAllocationsBulk(newAllocations);
         }
+
         setIsAddingAllocation(false);
         setEditingAllocationId(null);
     };
@@ -326,7 +358,7 @@ export default function ResourceMatrix({ managerMode }) {
                     </thead>
                     <tbody>
                         {memberData.map(member => (
-                            <>
+                            <Fragment key={member.id}>
                                 <tr
                                     key={member.id}
                                     className="resource-matrix__row"
@@ -429,17 +461,31 @@ export default function ResourceMatrix({ managerMode }) {
                                                         </select>
                                                     </div>
                                                     <div className="resource-matrix__form-field">
-                                                        <label>月</label>
-                                                        <select
-                                                            value={allocationForm.month}
-                                                            onChange={e => setAllocationForm({ ...allocationForm, month: e.target.value })}
-                                                        >
-                                                            {months.map(month => (
-                                                                <option key={month.key} value={month.key}>
-                                                                    {month.fullLabel}
-                                                                </option>
-                                                            ))}
-                                                        </select>
+                                                        <label>期間 (開始月 ～ 終了月)</label>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <select
+                                                                value={allocationForm.startMonth}
+                                                                onChange={e => setAllocationForm({ ...allocationForm, startMonth: e.target.value, endMonth: e.target.value > allocationForm.endMonth ? e.target.value : allocationForm.endMonth })}
+                                                            >
+                                                                {months.map(month => (
+                                                                    <option key={month.key} value={month.key}>
+                                                                        {month.fullLabel}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            <span>～</span>
+                                                            <select
+                                                                value={allocationForm.endMonth}
+                                                                onChange={e => setAllocationForm({ ...allocationForm, endMonth: e.target.value })}
+                                                                disabled={!!editingAllocationId} // Disable date range change on edit for simplicity
+                                                            >
+                                                                {months.map(month => (
+                                                                    <option key={month.key} value={month.key} disabled={month.key < allocationForm.startMonth}>
+                                                                        {month.fullLabel}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                     <div className="resource-matrix__form-field">
                                                         <label>従事率 ({allocationForm.percentage}%)</label>
@@ -557,7 +603,7 @@ export default function ResourceMatrix({ managerMode }) {
                                         </td>
                                     </tr>
                                 )}
-                            </>
+                            </Fragment>
                         ))}
                     </tbody>
                 </table>

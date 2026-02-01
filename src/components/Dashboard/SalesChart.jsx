@@ -20,7 +20,7 @@ import './SalesChart.css';
  * Displays monthly and cumulative sales data with confirmed and forecast values
  */
 export default function SalesChart() {
-    const { projects, probabilityWeights } = useApp();
+    const { projects, probabilityWeights, currency, formatCurrency } = useApp();
 
     // State for chart configuration
     const [calcMode, setCalcMode] = useState(CALC_MODE.REVENUE); // 'revenue' or 'order'
@@ -33,19 +33,21 @@ export default function SalesChart() {
         const monthlySales = calculateMonthlySales(projects, months, probabilityWeights, calcMode);
         const cumulativeSales = calculateCumulativeSales(monthlySales);
 
+        const divisor = currency === 'JPY_MAN' ? 10000 : 1;
+
         // Format for display
         return cumulativeSales.map(data => ({
             ...data,
             monthLabel: format(parseISO(data.month + '-01'), 'M月', { locale: ja }),
-            // Convert to 万円 for display
-            confirmedDisplay: Math.round(data.confirmed / 10000),
-            forecastDisplay: Math.round(data.forecast / 10000),
-            totalDisplay: Math.round(data.total / 10000),
-            cumulativeConfirmedDisplay: Math.round(data.cumulativeConfirmed / 10000),
-            cumulativeForecastDisplay: Math.round(data.cumulativeForecast / 10000),
-            cumulativeTotalDisplay: Math.round(data.cumulativeTotal / 10000),
+            // Convert to display unit
+            confirmedDisplay: Math.round(data.confirmed / divisor),
+            forecastDisplay: Math.round(data.forecast / divisor),
+            totalDisplay: Math.round(data.total / divisor),
+            cumulativeConfirmedDisplay: Math.round(data.cumulativeConfirmed / divisor),
+            cumulativeForecastDisplay: Math.round(data.cumulativeForecast / divisor),
+            cumulativeTotalDisplay: Math.round(data.cumulativeTotal / divisor),
         }));
-    }, [projects, probabilityWeights, calcMode, fiscalYear]);
+    }, [projects, probabilityWeights, calcMode, fiscalYear, currency]);
 
     // Summary totals
     const totals = useMemo(() => {
@@ -66,7 +68,7 @@ export default function SalesChart() {
                 <p className="sales-chart__tooltip-label">{label}</p>
                 {payload.map((entry, index) => (
                     <p key={index} style={{ color: entry.color }}>
-                        {entry.name}: ¥{entry.value.toLocaleString()}万
+                        {entry.name}: {entry.value.toLocaleString()}{currency === 'JPY_MAN' ? '万' : ''}
                     </p>
                 ))}
             </div>
@@ -75,6 +77,7 @@ export default function SalesChart() {
 
     const modeLabel = calcMode === CALC_MODE.REVENUE ? '売上' : '受注';
     const fiscalYearLabel = `${fiscalYear}年度`;
+    const unitLabel = currency === 'JPY_MAN' ? '万' : '';
 
     return (
         <div className="sales-chart">
@@ -134,15 +137,15 @@ export default function SalesChart() {
             <div className="sales-chart__summary">
                 <div className="sales-chart__summary-item sales-chart__summary-item--confirmed">
                     <span className="sales-chart__summary-label">確定{modeLabel}</span>
-                    <span className="sales-chart__summary-value">¥{totals.confirmed.toLocaleString()}万</span>
+                    <span className="sales-chart__summary-value">{totals.confirmed.toLocaleString()}{unitLabel}</span>
                 </div>
                 <div className="sales-chart__summary-item sales-chart__summary-item--forecast">
                     <span className="sales-chart__summary-label">見込み{modeLabel}</span>
-                    <span className="sales-chart__summary-value">¥{totals.forecast.toLocaleString()}万</span>
+                    <span className="sales-chart__summary-value">{totals.forecast.toLocaleString()}{unitLabel}</span>
                 </div>
                 <div className="sales-chart__summary-item sales-chart__summary-item--total">
                     <span className="sales-chart__summary-label">{fiscalYearLabel}合計</span>
-                    <span className="sales-chart__summary-value">¥{totals.total.toLocaleString()}万</span>
+                    <span className="sales-chart__summary-value">{totals.total.toLocaleString()}{unitLabel}</span>
                 </div>
             </div>
 
@@ -158,7 +161,7 @@ export default function SalesChart() {
                             />
                             <YAxis
                                 tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }}
-                                tickFormatter={(v) => `${v}万`}
+                                tickFormatter={(v) => `${v}${unitLabel}`}
                             />
                             <Tooltip content={<CustomTooltip />} />
                             <Legend />
@@ -184,7 +187,7 @@ export default function SalesChart() {
                             />
                             <YAxis
                                 tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }}
-                                tickFormatter={(v) => `${v}万`}
+                                tickFormatter={(v) => `${v}${unitLabel}`}
                             />
                             <Tooltip content={<CustomTooltip />} />
                             <Legend />

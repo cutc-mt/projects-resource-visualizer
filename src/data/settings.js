@@ -9,7 +9,7 @@
 export const DEFAULT_PROBABILITY_WEIGHTS = {
     HIGH: 1.0,      // 80-100%: Count full value
     MEDIUM: 0.7,    // 50-79%: Count 70% of value
-    LOW: 0.4,       // 25-49%: Count 40% of value
+    LOW: 0.3,       // 25-49%: Count 30% of value
     UNCERTAIN: 0.1  // 0-24%: Count 10% of value
 };
 

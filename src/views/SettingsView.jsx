@@ -1,19 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent, Badge } from '../components/UI';
-import { Settings, Save, RotateCcw, Bot } from 'lucide-react';
+import { Settings, Save, RotateCcw, Bot, DollarSign } from 'lucide-react';
 import { LLM_PROVIDERS, DEFAULT_LLM_SETTINGS, validateLLMSettings } from '../services/llmService';
 import './SettingsView.css';
 
 export default function SettingsView() {
-    const { managerMode, probabilityWeights, setProbabilityWeights, llmSettings, setLLMSettings } = useApp();
-    const [weights, setWeights] = useState(probabilityWeights);
+    const { managerMode, probabilityWeights, setProbabilityWeights, llmSettings, setLLMSettings, currency, setCurrency } = useApp();
+
+    // Convert decimal weights (0.0-1.0) to percentage (0-100) for local state
+    const [weights, setWeights] = useState({});
+
     const [llm, setLLM] = useState(llmSettings || DEFAULT_LLM_SETTINGS);
     const [saved, setSaved] = useState(false);
     const [llmSaved, setLLMSaved] = useState(false);
+    const [currencySaved, setCurrencySaved] = useState(false);
 
     useEffect(() => {
-        setWeights(probabilityWeights);
+        if (probabilityWeights) {
+            setWeights({
+                HIGH: Math.round((probabilityWeights.HIGH ?? 1.0) * 100),
+                MEDIUM: Math.round((probabilityWeights.MEDIUM ?? 0.7) * 100),
+                LOW: Math.round((probabilityWeights.LOW ?? 0.3) * 100), // Default 30% per new request
+                UNCERTAIN: Math.round((probabilityWeights.UNCERTAIN ?? 0.1) * 100),
+            });
+        }
     }, [probabilityWeights]);
 
     useEffect(() => {
@@ -39,15 +50,28 @@ export default function SettingsView() {
     };
 
     const handleSaveWeights = () => {
-        setProbabilityWeights(weights);
+        // Convert percentage back to decimal
+        const newWeights = {
+            HIGH: weights.HIGH / 100,
+            MEDIUM: weights.MEDIUM / 100,
+            LOW: weights.LOW / 100,
+            UNCERTAIN: weights.UNCERTAIN / 100,
+        };
+        setProbabilityWeights(newWeights);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
 
     const handleResetWeights = () => {
-        const defaultWeights = { high: 80, medium: 50, low: 20, uncertain: 10 };
+        // High: 100%, Medium: 70%, Low: 30% default
+        const defaultWeights = { HIGH: 100, MEDIUM: 70, LOW: 30, UNCERTAIN: 10 };
         setWeights(defaultWeights);
-        setProbabilityWeights(defaultWeights);
+    };
+
+    const handleCurrencyChange = (newCurrency) => {
+        setCurrency(newCurrency);
+        setCurrencySaved(true);
+        setTimeout(() => setCurrencySaved(false), 2000);
     };
 
     const handleLLMChange = (field, value) => {
@@ -72,9 +96,9 @@ export default function SettingsView() {
     };
 
     const probabilityLevels = [
-        { key: 'high', label: '高確度', color: 'var(--color-accent-green)' },
-        { key: 'medium', label: '中確度', color: 'var(--color-accent-yellow)' },
-        { key: 'low', label: '低確度', color: 'var(--color-accent-red)' },
+        { key: 'HIGH', label: '高確度', color: 'var(--color-accent-green)' },
+        { key: 'MEDIUM', label: '中確度', color: 'var(--color-accent-yellow)' },
+        { key: 'LOW', label: '低確度', color: 'var(--color-accent-red)' },
     ];
 
     return (
@@ -85,6 +109,39 @@ export default function SettingsView() {
                     設定
                 </h2>
             </header>
+
+            {/* Currency Settings */}
+            <Card className="settings-view__card">
+                <CardHeader>
+                    <CardTitle>
+                        <DollarSign size={20} />
+                        通貨・単位設定
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="settings-view__description">
+                        アプリケーション全体で表示する通貨単位を選択します。
+                    </p>
+                    <div className="settings-view__form">
+                        <div className="settings-view__field">
+                            <label>通貨単位</label>
+                            <select
+                                value={currency}
+                                onChange={(e) => handleCurrencyChange(e.target.value)}
+                            >
+                                <option value="JPY">円 (¥10,000,000)</option>
+                                <option value="JPY_MAN">万円 (¥1,000万)</option>
+                                <option value="USD">ドル ($10,000,000)</option>
+                            </select>
+                        </div>
+                        {currencySaved && (
+                            <span className="settings-view__saved-indicator">
+                                保存しました
+                            </span>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Probability Weights Section */}
             <Card className="settings-view__card">
@@ -102,12 +159,12 @@ export default function SettingsView() {
                             <div key={key} className="settings-view__weight-item">
                                 <div className="settings-view__weight-header">
                                     <Badge
-                                        variant={key === 'high' ? 'success' : key === 'medium' ? 'warning' : 'danger'}
+                                        variant={key === 'HIGH' ? 'success' : key === 'MEDIUM' ? 'warning' : 'danger'}
                                     >
                                         {label}
                                     </Badge>
                                     <span className="settings-view__weight-value">
-                                        {weights[key]}%
+                                        {weights[key] ?? 0}%
                                     </span>
                                 </div>
                                 <input
@@ -115,7 +172,7 @@ export default function SettingsView() {
                                     min="0"
                                     max="100"
                                     step="5"
-                                    value={weights[key]}
+                                    value={weights[key] ?? 0}
                                     onChange={(e) => handleWeightChange(key, e.target.value)}
                                     className="settings-view__slider"
                                     style={{ '--slider-color': color }}
@@ -135,7 +192,7 @@ export default function SettingsView() {
                             {probabilityLevels.map(({ key, label }) => (
                                 <div key={key} className="settings-view__preview-item">
                                     <span>{label}:</span>
-                                    <span>¥{((10000000 * weights[key]) / 100 / 10000).toLocaleString()}万</span>
+                                    <span>¥{((10000000 * (weights[key] || 0)) / 100).toLocaleString()}</span>
                                 </div>
                             ))}
                         </div>

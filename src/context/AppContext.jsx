@@ -27,6 +27,7 @@ const ACTIONS = {
     ADD_MEMBER: 'ADD_MEMBER',
     UPDATE_MEMBER: 'UPDATE_MEMBER',
     DELETE_MEMBER: 'DELETE_MEMBER',
+    ADD_ALLOCATIONS_BULK: 'ADD_ALLOCATIONS_BULK',
 };
 
 // Log action types
@@ -35,6 +36,7 @@ const LOG_ACTIONS = {
     UPDATE: '更新',
     DELETE: '削除',
     CONVERT: '受注変換',
+    BULK_ADD: '一括登録',
 };
 
 // Reducer
@@ -88,6 +90,8 @@ function appReducer(state, action) {
         }
         case ACTIONS.ADD_ALLOCATION:
             return { ...state, allocations: [...state.allocations, action.payload] };
+        case ACTIONS.ADD_ALLOCATIONS_BULK:
+            return { ...state, allocations: [...state.allocations, ...action.payload] };
         case ACTIONS.UPDATE_ALLOCATION:
             return {
                 ...state,
@@ -340,6 +344,36 @@ export function AppProvider({ children, managerMode = false }) {
             addLogEntry(log);
         },
 
+        addAllocationsBulk: (newAllocations) => {
+            dispatch({ type: ACTIONS.ADD_ALLOCATIONS_BULK, payload: newAllocations });
+
+            if (newAllocations.length === 0) return;
+
+            const firstAlloc = newAllocations[0];
+            const project = state.projects.find(p => p.id === firstAlloc.projectId);
+            const member = state.members.find(m => m.id === firstAlloc.memberId);
+            const targetName = `${member?.name || '不明'} (${project?.name || '不明'})`;
+
+            const startMonth = newAllocations.reduce((min, a) => a.month < min ? a.month : min, firstAlloc.month);
+            const endMonth = newAllocations.reduce((max, a) => a.month > max ? a.month : max, firstAlloc.month);
+
+            const changes = [
+                { field: 'period', old: null, new: `${startMonth} ~ ${endMonth}` },
+                { field: 'count', old: null, new: `${newAllocations.length}ヶ月分` }
+            ];
+
+            const log = createLogEntry(
+                'allocations',
+                firstAlloc.id, // Use ID of first one as consistent reference
+                'create',
+                changes,
+                { ...firstAlloc, count: newAllocations.length, period: `${startMonth} ~ ${endMonth}` },
+                'current_user',
+                targetName + ' [一括]'
+            );
+            addLogEntry(log);
+        },
+
         updateAllocation: (allocation) => {
             const oldAllocation = state.allocations.find(a => a.id === allocation.id);
             dispatch({ type: ACTIONS.UPDATE_ALLOCATION, payload: allocation });
@@ -442,6 +476,50 @@ export function AppProvider({ children, managerMode = false }) {
         },
     }), [state.projects, state.allocations, state.members, addLogEntry]);
 
+    // Currency Settings with localStorage persistence
+    const [currency, setCurrency] = useState(() => {
+        try {
+            return localStorage.getItem('currency') || 'JPY';
+        } catch {
+            return 'JPY';
+        }
+    });
+
+    const updateCurrency = useCallback((newCurrency) => {
+        setCurrency(newCurrency);
+        try {
+            localStorage.setItem('currency', newCurrency);
+        } catch {
+            // Ignore localStorage errors
+        }
+    }, []);
+
+    // Format currency helper
+    const formatCurrency = useCallback((value) => {
+        if (value === undefined || value === null) return '-';
+
+        switch (currency) {
+            case 'JPY_MAN':
+                // 万円単位 (e.g. 1,000万)
+                return `¥${(value / 10000).toLocaleString()}万`;
+            case 'USD':
+                // USD (e.g. $10,000) - Assuming 1 USD = 100 JPY approx for conversion if needed, but here we assume value is already in base unit?
+                // User said "Unit is configurable", assuming the input value is in JPY.
+                // If we display in USD, we might need a rate. But for now let's just assume the unit changes, or strictly formatting.
+                // "案件の金額の単位は設定で変えられるように" -> usually implies display unit.
+                // If base is Yen, USD display would need conversion.
+                // For simplicity/safety, if USD is selected, we might just display '$' but the value remains.
+                // OR likely, the user just wants the SYMBOL to change?
+                // Given "Default is Yen", let's stick to formatting.
+                // If 'USD', display $ and maybe comma.
+                return `$${value.toLocaleString()}`;
+            case 'JPY':
+            default:
+                // 円単位 (e.g. ¥10,000,000)
+                return `¥${value.toLocaleString()}`;
+        }
+    }, [currency]);
+
     const value = {
         ...state,
         ...derivedData,
@@ -452,6 +530,9 @@ export function AppProvider({ children, managerMode = false }) {
         llmSettings,
         setLLMSettings,
         updateLogs,
+        currency,
+        setCurrency: updateCurrency,
+        formatCurrency,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

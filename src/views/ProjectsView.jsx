@@ -62,7 +62,9 @@ export default function ProjectsView() {
         addProject,
         updateProject,
         deleteProject,
-        managerMode
+        managerMode,
+        formatCurrency,
+        currency
     } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [viewMode, setViewMode] = useState('panel'); // 'panel' or 'gantt'
@@ -221,10 +223,10 @@ export default function ProjectsView() {
 
                                     {/* Financials Summary */}
                                     <div className="projects-view__financials">
-                                        <div className="projects-view__financial-item">
-                                            <span className="projects-view__financial-label">売上</span>
-                                            <span className="projects-view__financial-value">
-                                                ¥{((project.actualRevenue || project.estimatedBudget) / 10000).toLocaleString()}万
+                                        <div className="project-card__budget">
+                                            <span className="project-card__budget-label">予算:</span>
+                                            <span className="project-card__budget-value">
+                                                {formatCurrency(project.actualRevenue || project.estimatedBudget)}
                                             </span>
                                         </div>
                                         <div className="projects-view__financial-item">
@@ -320,6 +322,7 @@ export default function ProjectsView() {
                         onEdit={handleEditProject}
                         onDelete={handleDeleteProject}
                         onAIAdvice={() => setIsAIAdviceOpen(true)}
+                        currency={currency}
                     />
                 )}
             </Modal>
@@ -346,7 +349,8 @@ function ProjectDetail({
     managerMode,
     onEdit,
     onDelete,
-    onAIAdvice
+    onAIAdvice,
+    currency
 }) {
     const [isAddingAllocation, setIsAddingAllocation] = useState(false);
     const [editingAllocationId, setEditingAllocationId] = useState(null);
@@ -393,16 +397,18 @@ function ProjectDetail({
         ? ((project.actualCost - project.plannedCost) / project.plannedCost * 100).toFixed(1)
         : 0;
 
+    const divisor = currency === 'JPY_MAN' ? 10000 : 1;
+
     const financialData = [
         {
             name: '売上',
-            計画: project.estimatedBudget / 10000,
-            実績: (project.actualRevenue || project.estimatedBudget) / 10000
+            計画: project.estimatedBudget / divisor,
+            実績: (project.actualRevenue || project.estimatedBudget) / divisor
         },
         {
             name: 'コスト',
-            計画: (project.plannedCost || 0) / 10000,
-            実績: (project.actualCost || 0) / 10000
+            計画: (project.plannedCost || 0) / divisor,
+            実績: (project.actualCost || 0) / divisor
         }
     ];
 
@@ -517,7 +523,9 @@ function ProjectDetail({
 
             {/* Financial Chart */}
             <div className="project-detail__section">
-                <h4 className="project-detail__section-title">収支状況（万円）</h4>
+                <h4 className="project-detail__section-title">
+                    収支状況 {currency === 'JPY_MAN' ? '（万円）' : currency === 'USD' ? '（ドル）' : '（円）'}
+                </h4>
                 <div className="project-detail__chart">
                     <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={financialData} layout="vertical">
