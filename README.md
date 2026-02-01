@@ -68,3 +68,23 @@ npm run dev
 ## ログ機能について
 本アプリケーションは、ローカルストレージを使用して監査ログを永続化しています。
 将来的なバックエンド移行（PocketBase等）を見据えたデータ構造で設計されています。
+
+## Dockerでの実行
+
+Dockerを使用して、環境構築なしでアプリケーションを実行できます。
+
+### 前提条件
+- Docker Desktop がインストールされていること
+
+### 起動方法
+
+```bash
+docker-compose up --build
+```
+ブラウザで [http://localhost:8080](http://localhost:8080) にアクセスしてください。
+
+### 停止方法
+
+```bash
+docker-compose down
+```
