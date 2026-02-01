@@ -6,7 +6,7 @@ import { LLM_PROVIDERS, DEFAULT_LLM_SETTINGS, validateLLMSettings } from '../ser
 import './SettingsView.css';
 
 export default function SettingsView() {
-    const { managerMode, probabilityWeights, setProbabilityWeights, llmSettings, setLLMSettings, currency, setCurrency } = useApp();
+    const { managerMode, probabilityWeights, setProbabilityWeights, llmSettings, setLLMSettings, currency, setCurrency, costInputStep, setCostInputStep } = useApp();
 
     // Convert decimal weights (0.0-1.0) to percentage (0-100) for local state
     const [weights, setWeights] = useState({});
@@ -133,6 +133,22 @@ export default function SettingsView() {
                                 <option value="JPY_MAN">万円 (¥1,000万)</option>
                                 <option value="USD">ドル ($10,000,000)</option>
                             </select>
+                        </div>
+                        <div className="settings-view__field">
+                            <label>金額入力単位（バリデーション）</label>
+                            <select
+                                value={costInputStep}
+                                onChange={(e) => setCostInputStep(parseInt(e.target.value))}
+                            >
+                                <option value="1">1円単位</option>
+                                <option value="1000">1,000円単位</option>
+                                <option value="10000">1万円単位</option>
+                                <option value="100000">10万円単位</option>
+                                <option value="1000000">100万円単位</option>
+                            </select>
+                            <span className="settings-view__hint">
+                                ※案件の予算・実績などの入力時に許可される最小単位です
+                            </span>
                         </div>
                         {currencySaved && (
                             <span className="settings-view__saved-indicator">

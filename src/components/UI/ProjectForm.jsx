@@ -16,7 +16,7 @@ import './ProjectForm.css';
 export default function ProjectForm({ initialData, mode = 'lead', onSubmit, onCancel }) {
     const isLead = mode === 'lead';
     const isConvert = mode === 'convert';
-    const { currency } = useApp();
+    const { currency, costInputStep } = useApp();
 
     // Determine input unit label.
     const unitLabel = currency === 'USD' ? '（USD）' : '（円）';
@@ -227,7 +227,7 @@ export default function ProjectForm({ initialData, mode = 'lead', onSubmit, onCa
                         value={isLead && !isConvert ? formData.estimatedBudget : formData.actualRevenue}
                         onChange={handleChange}
                         min="0"
-                        step="1000000"
+                        step={costInputStep}
                     />
                 </div>
 
@@ -242,7 +242,7 @@ export default function ProjectForm({ initialData, mode = 'lead', onSubmit, onCa
                                 value={formData.plannedCost}
                                 onChange={handleChange}
                                 min="0"
-                                step="1000000"
+                                step={costInputStep}
                             />
                         </div>
                         <div className="project-form__field">
@@ -254,7 +254,7 @@ export default function ProjectForm({ initialData, mode = 'lead', onSubmit, onCa
                                 value={formData.actualCost}
                                 onChange={handleChange}
                                 min="0"
-                                step="1000000"
+                                step={costInputStep}
                             />
                         </div>
                     </>

@@ -45,6 +45,7 @@ export default function HistoryView() {
         if (!startDate && !endDate) return updateLogs;
 
         return updateLogs.filter(log => {
+            if (!log.timestamp) return false;
             const logDate = parseISO(log.timestamp);
 
             if (startDate && endDate) {
@@ -141,6 +142,7 @@ export default function HistoryView() {
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
+                            onClick={(e) => e.target.showPicker && e.target.showPicker()}
                         />
                     </div>
                     <div className="history-view__filter-group">
@@ -152,6 +154,7 @@ export default function HistoryView() {
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
+                            onClick={(e) => e.target.showPicker && e.target.showPicker()}
                         />
                     </div>
                     {(startDate || endDate) && (

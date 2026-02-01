@@ -494,6 +494,23 @@ export function AppProvider({ children, managerMode = false }) {
         }
     }, []);
 
+    const [costInputStep, setCostInputStepState] = useState(() => {
+        try {
+            return parseInt(localStorage.getItem('costInputStep') || '1000000');
+        } catch {
+            return 1000000;
+        }
+    });
+
+    const setCostInputStep = useCallback((step) => {
+        setCostInputStepState(step);
+        try {
+            localStorage.setItem('costInputStep', step);
+        } catch {
+            // Ignore localStorage errors
+        }
+    }, []);
+
     // Format currency helper
     const formatCurrency = useCallback((value) => {
         if (value === undefined || value === null) return '-';
@@ -532,6 +549,8 @@ export function AppProvider({ children, managerMode = false }) {
         updateLogs,
         currency,
         setCurrency: updateCurrency,
+        costInputStep,
+        setCostInputStep,
         formatCurrency,
     };
 
